@@ -1,0 +1,30 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* RESET TOTAL */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Adiós a los scrolls dobles */
+  background-color: #f4f6f8;
+}
+
+/* ESTO ES LO QUE ARREGLA EL CENTRADO EXTRAÑO */
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important; /* Vite suele poner un max-width, esto lo mata */
+  display: block; /* Asegura que ocupe todo, no flex centrado */
+}
+
+/* Reset de cajas */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
