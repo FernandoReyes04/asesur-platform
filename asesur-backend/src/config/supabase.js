@@ -1,11 +1,14 @@
-// src/config/supabase.js
-require('dotenv').config()
+require('dotenv').config() // Asegúrate de tener dotenv instalado
 const { createClient } = require('@supabase/supabase-js')
 
-// En un proyecto real, usa process.env.SUPABASE_URL
-// Por ahora pegamos las credenciales aquí o usamos las variables de entorno si las configuraste
-const supabaseUrl = 'https://djfwsscyhwjqtafvqpzs.supabase.co' 
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqZndzc2N5aHdqcXRhZnZxcHpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjA5MjYzNywiZXhwIjoyMDgxNjY4NjM3fQ.h2Prdegb5Z-ZcrbCYXy3uYZxyQp_1GeO97AVWDxSo8g'
+// Usamos process.env para leer del archivo .env oculto
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('⚠️ Faltan las variables de entorno de Supabase')
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 module.exports = supabase
