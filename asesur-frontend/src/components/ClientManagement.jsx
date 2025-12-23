@@ -9,38 +9,34 @@ export default function ClientManagement({ user }) {
   const [dragActive, setDragActive] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
 
-  // FORMULARIO (Ahora con TODOS los campos)
+  // FORMULARIO (Actualizado con teléfono)
   const [formData, setFormData] = useState({
     nombre: '', apellido: '', fecha_nacimiento: '', 
     direccion: '', colonia: '', municipio: '', estado_direccion: '', 
-    rfc: '', tipo_persona: 'Física', // Valor por defecto
+    rfc: '', tipo_persona: 'Física', 
+    telefono: '', // <--- 1. NUEVO CAMPO EN ESTADO
     archivo: null, ine_url_existente: ''
   })
 
   // 1. CARGA INICIAL Y BÚSQUEDA
   useEffect(() => { fetchClients(searchTerm) }, [searchTerm])
 
-  // 2. REALTIME (NUEVO) - Escuchar cambios en la base de datos para Multiusuario
+  // 2. REALTIME
   useEffect(() => {
-    // Nos suscribimos al canal de cambios de la tabla 'clientes'
     const channel = supabase
       .channel('cambios-clientes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'clientes' },
         (payload) => {
-          console.log('🔔 Cambio detectado en tiempo real:', payload)
-          // Si alguien más modificó la tabla, recargamos la lista manteniendo el filtro actual
+          console.log('🔔 Cambio detectado:', payload)
           fetchClients(searchTerm) 
         }
       )
       .subscribe()
 
-    // Limpieza al salir de la pantalla
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [searchTerm]) // Se reinicia si cambias la búsqueda para mantener consistencia del filtro
+    return () => { supabase.removeChannel(channel) }
+  }, [searchTerm])
 
   // --- LÓGICA DE DATOS ---
   
@@ -53,29 +49,50 @@ export default function ClientManagement({ user }) {
     } catch (error) { console.error(error) }
   }
 
-  // 3. SELECCIONAR CLIENTE (Rellenar formulario)
+  // 3. SELECCIONAR CLIENTE (Actualizado)
   const handleSelectClient = (c) => {
     setSelectedClient(c)
     setFormData({
       nombre: c.nombre, apellido: c.apellido, fecha_nacimiento: c.fecha_nacimiento || '',
       direccion: c.direccion || '', colonia: c.colonia || '', municipio: c.municipio || '', estado_direccion: c.estado_direccion || '',
       rfc: c.rfc || '', tipo_persona: c.tipo_persona || 'Física',
+      telefono: c.telefono || '', // <--- 2. CARGAR TELÉFONO
       archivo: null, ine_url_existente: c.ine_url
     })
   }
 
-  // 4. LIMPIAR
+  // 4. LIMPIAR (Actualizado)
   const handleReset = () => {
     setSelectedClient(null)
     setFormData({
       nombre: '', apellido: '', fecha_nacimiento: '', 
       direccion: '', colonia: '', municipio: '', estado_direccion: '', 
-      rfc: '', tipo_persona: 'Física',
+      rfc: '', tipo_persona: 'Física', 
+      telefono: '', // <--- 3. RESETEAR TELÉFONO
       archivo: null, ine_url_existente: ''
     })
   }
 
-  // 5. GUARDAR
+  // 5. MÁSCARA DE TELÉFONO (NUEVA FUNCIÓN) 📞
+  const handlePhoneChange = (e) => {
+    let val = e.target.value
+    // a. Solo números
+    val = val.replace(/\D/g, '')
+    // b. Ignorar prefijo 52 si lo escriben manual
+    if (val.startsWith('52')) val = val.substring(2)
+    // c. Limitar a 10 dígitos
+    val = val.substring(0, 10)
+    
+    // d. Formatear
+    let formatted = ''
+    if (val.length > 0) formatted = `(+52) ${val.substring(0, 3)}`
+    if (val.length >= 4) formatted += `-${val.substring(3, 6)}`
+    if (val.length >= 7) formatted += `-${val.substring(6, 10)}`
+
+    setFormData({ ...formData, telefono: formatted })
+  }
+
+  // 6. GUARDAR
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -91,13 +108,12 @@ export default function ClientManagement({ user }) {
         if (!selectedClient && !formData.archivo) throw new Error("⚠️ Sube el INE para registros nuevos.")
       }
 
-      // Payload completo
       const payload = {
-        ...formData, // Esto envía todos los campos del estado (nombre, rfc, dirección, etc)
+        ...formData,
         ine_url: publicUrl,
         agente_id: user.id || user.user?.id
       }
-      delete payload.archivo; delete payload.ine_url_existente; // Limpiamos basura
+      delete payload.archivo; delete payload.ine_url_existente;
 
       const url = selectedClient 
         ? `http://localhost:3000/api/clientes/${selectedClient.id}` 
@@ -114,8 +130,6 @@ export default function ClientManagement({ user }) {
       if (!response.ok) throw new Error("Error en la operación")
       alert("✅ Datos guardados correctamente")
       handleReset()
-      // No hace falta llamar a fetchClients aquí manualmente si el Realtime es rápido, 
-      // pero dejarlo asegura que el propio usuario vea el cambio al instante.
       fetchClients(searchTerm) 
     } catch (error) { alert("Error: " + error.message) } finally { setLoading(false) }
   }
@@ -124,14 +138,14 @@ export default function ClientManagement({ user }) {
   const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); if(e.type==="dragenter"||e.type==="dragover")setDragActive(true);else if(e.type==="dragleave")setDragActive(false); }
   const handleDrop = (e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); if(e.dataTransfer.files[0]) setFormData({...formData, archivo:e.dataTransfer.files[0]}); }
   
-  // ESTILOS SIMPLIFICADOS
+  // ESTILOS
   const sectionTitle = { fontSize:'11px', fontWeight:'bold', color:'#94a3b8', textTransform:'uppercase', marginTop:'15px', marginBottom:'5px', borderBottom:'1px solid #eee', paddingBottom:'2px' }
   const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%', fontSize:'13px' }
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '380px 1fr', gap: '30px', alignItems: 'start' }}>
       
-      {/* --- IZQUIERDA: FORMULARIO LARGO --- */}
+      {/* --- FORMULARIO --- */}
       <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', maxHeight:'85vh', overflowY:'auto' }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
            <h3 style={{ margin: 0, color: selectedClient ? '#f59e0b' : '#10b981' }}>{selectedClient ? '✏️ Editar' : '🚀 Nuevo'}</h3>
@@ -145,11 +159,24 @@ export default function ClientManagement({ user }) {
             <option value="Física">Persona Física</option>
             <option value="Moral">Persona Moral (Empresa)</option>
           </select>
+          
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
             <input placeholder="Nombre(s)" required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} style={inputStyle} />
             <input placeholder="Apellidos" required value={formData.apellido} onChange={e => setFormData({...formData, apellido: e.target.value})} style={inputStyle} />
           </div>
-          <input type="date" required value={formData.fecha_nacimiento} onChange={e => setFormData({...formData, fecha_nacimiento: e.target.value})} style={inputStyle} />
+
+          {/* AQUÍ AGREGAMOS EL INPUT DE TELÉFONO JUNTO A LA FECHA */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
+             <input type="date" required value={formData.fecha_nacimiento} onChange={e => setFormData({...formData, fecha_nacimiento: e.target.value})} style={inputStyle} />
+             <input 
+                placeholder="(+52) 999-999-9999" 
+                value={formData.telefono} 
+                onChange={handlePhoneChange} 
+                style={inputStyle} 
+                maxLength={19}
+             />
+          </div>
+
           <input placeholder="RFC (Opcional)" value={formData.rfc} onChange={e => setFormData({...formData, rfc: e.target.value})} style={{...inputStyle, textTransform:'uppercase'}} />
 
           <div style={sectionTitle}>2. Dirección</div>
@@ -176,7 +203,7 @@ export default function ClientManagement({ user }) {
         </form>
       </div>
 
-      {/* --- DERECHA: TABLA --- */}
+      {/* --- TABLA --- */}
       <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
         <input type="text" placeholder="🔍 Buscar por nombre, apellido o RFC..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{...inputStyle, padding:'12px', marginBottom:'20px', background:'#f8fafc'}} />
         
@@ -195,6 +222,8 @@ export default function ClientManagement({ user }) {
                 <td style={{padding:'10px', fontWeight:'500'}}>
                   <div>{c.nombre} {c.apellido}</div>
                   <div style={{fontSize:'10px', color:'#94a3b8'}}>{c.tipo_persona}</div>
+                  {/* Mostrar teléfono pequeño en la tabla si existe */}
+                  {c.telefono && <div style={{fontSize:'10px', color:'#3b82f6'}}>{c.telefono}</div>}
                 </td>
                 <td style={{padding:'10px', fontFamily:'monospace'}}>{c.rfc || '---'}</td>
                 <td style={{padding:'10px'}}>{c.municipio || '---'}</td>

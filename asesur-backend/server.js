@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/authRoutes')
 const clientRoutes = require('./src/routes/clientRoutes')
 const policyRoutes = require('./src/routes/policyRoutes')
 const recordsRoutes = require('./src/routes/recordsRoutes')
+const metricsRoutes = require('./src/routes/metricsRoutes')
 
 const app = express()
 const PORT = 3000
@@ -40,6 +41,7 @@ app.use('/api', authRoutes)
 app.use('/api/clientes', clientRoutes)
 app.use('/api/polizas', policyRoutes)
 app.use('/api/registros', recordsRoutes)
+app.use('/api/metricas', metricsRoutes)
 
 app.listen(PORT, () => {
   console.log(`🛡️ Servidor BLINDADO corriendo en http://localhost:${PORT}`)

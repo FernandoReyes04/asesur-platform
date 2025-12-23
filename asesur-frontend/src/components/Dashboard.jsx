@@ -1,27 +1,73 @@
 import { useEffect, useState } from 'react'
+import { supabase } from '../supabaseClient' 
 import { dataService } from '../services/dataService'
 import ClientManagement from './ClientManagement'
 import PolicyManagement from './PolicyManagement'
 import RecordsView from './RecordsView' 
+import MetricsView from './MetricsView'
 
 export default function Dashboard({ user, onLogout }) {
-  // Estados de Vista y Datos
+  // Estados de Vista
   const [currentView, setCurrentView] = useState('home')
   const [data, setData] = useState({ clientesHoy: [], ultimosTramites: [], agentes: [] })
   const [loading, setLoading] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  
+  // --- OPTIMIZACIÓN DE NOMBRE (CERO DELAY) ---
+  const [profileName, setProfileName] = useState(() => {
+    return localStorage.getItem('asesur_user_name') || ''
+  })
 
-  // Estado para el Modal de Detalles
+  // Estado para el Modal
   const [selectedClient, setSelectedClient] = useState(null)
 
-  // Cargar datos
+  // Carga datos del Dashboard
   useEffect(() => {
     if (currentView === 'home') {
        dataService.getDashboardData().then(setData).finally(() => setLoading(false))
     }
   }, [currentView])
 
-  // --- ESTILOS ---
+  // --- RECUPERAR NOMBRE Y GUARDAR EN CACHÉ ---
+  useEffect(() => {
+    const fetchProfileName = async () => {
+      if (!user || !user.id) return
+
+      try {
+        // CORRECCIÓN AQUÍ: Quitamos 'error' porque no lo usábamos. Solo pedimos 'data'.
+        const { data } = await supabase
+          .from('profiles')
+          .select('nombre')
+          .eq('id', user.id)
+          .single()
+
+        if (data && data.nombre) {
+          // Si el nombre es diferente al que tenemos, actualizamos
+          if (data.nombre !== profileName) {
+            setProfileName(data.nombre)
+            localStorage.setItem('asesur_user_name', data.nombre)
+          }
+        }
+      } catch (error) {
+        // Este error SÍ se usa (es el del try/catch)
+        console.error('Error fetching profile:', error)
+      }
+    }
+
+    fetchProfileName()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]) 
+
+  // --- LOGOUT MEJORADO ---
+  const handleLogoutClick = () => {
+    localStorage.removeItem('asesur_user_name')
+    onLogout()
+  }
+
+  // --- LÓGICA DE VISUALIZACIÓN ---
+  const displayName = profileName || user.user_metadata?.nombre || '...'
+
+  // Estilos
   const btnStyle = (viewName) => ({
     display: 'flex', alignItems: 'center', gap: '15px', width: '100%', padding: '12px',
     background: currentView === viewName ? '#1e293b' : 'transparent',
@@ -39,16 +85,10 @@ export default function Dashboard({ user, onLogout }) {
     alignItems: 'center'
   }
 
-  // --- LÓGICA PARA OBTENER EL NOMBRE REAL (CORRECCIÓN) ---
-  // Prioridad 1: user_metadata.nombre (Donde se guarda al registrarse en el formulario "Crear Cuenta")
-  // Prioridad 2: user.nombre (Si viene del login manual)
-  // Prioridad 3: 'Usuario' (Fallback)
-  const realName = user.user_metadata?.nombre || user.nombre || 'Usuario'
-
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%', backgroundColor: '#f1f5f9', position: 'relative' }}>
       
-      {/* ---------------- SIDEBAR ---------------- */}
+      {/* SIDEBAR */}
       <aside style={{ width: isSidebarOpen ? '260px' : '80px', background: '#0f172a', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'all 0.3s' }}>
         <div>
            <h2 onClick={()=>setIsSidebarOpen(!isSidebarOpen)} style={{cursor:'pointer', color:'#38bdf8'}}>ASESUR 🛡️</h2>
@@ -66,18 +106,20 @@ export default function Dashboard({ user, onLogout }) {
              <button onClick={() => setCurrentView('registros')} style={btnStyle('registros')}>
                <span>📂</span> {isSidebarOpen && <span>Registros</span>}
              </button>
+             <button onClick={() => setCurrentView('metricas')} style={btnStyle('metricas')}>
+   <span>📈</span> {isSidebarOpen && <span>Reportes y Ganancias</span>}
+</button>
            </nav>
         </div>
         
-        <button onClick={onLogout} style={{background:'#dc2626', color:'white', border:'none', padding:'10px', borderRadius:'6px', cursor:'pointer'}}>
+        <button onClick={handleLogoutClick} style={{background:'#dc2626', color:'white', border:'none', padding:'10px', borderRadius:'6px', cursor:'pointer'}}>
           {isSidebarOpen ? 'Cerrar Sesión' : '🚪'}
         </button>
       </aside>
 
-      {/* ---------------- MAIN ---------------- */}
+      {/* MAIN */}
       <main style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
         
-        {/* Header Superior */}
         <div style={{ marginBottom: '30px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div>
             <h1 style={{ margin: 0, color: '#0f172a' }}>
@@ -88,9 +130,8 @@ export default function Dashboard({ user, onLogout }) {
             <p style={{margin:0, fontSize:'13px', color:'#64748b'}}>Bienvenido al sistema.</p>
           </div>
           <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-            <span style={{padding:'8px 12px', background:'white', borderRadius:'20px', fontSize:'13px', color:'#334155', border:'1px solid #e2e8f0', fontWeight:'600'}}>
-              {/* AQUÍ SE MUESTRA EL NOMBRE CORRECTO */}
-              👤 {realName}
+            <span style={{padding:'8px 12px', background:'white', borderRadius:'20px', fontSize:'13px', color:'#334155', border:'1px solid #e2e8f0', fontWeight:'600', minWidth:'100px', textAlign:'center'}}>
+              👤 {displayName}
             </span>
           </div>
         </div>
@@ -102,6 +143,8 @@ export default function Dashboard({ user, onLogout }) {
           <PolicyManagement />
         ) : currentView === 'registros' ? (
           <RecordsView />
+          ) : currentView === 'metricas' ? (
+   <MetricsView />
         ) : (
           <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
              <div style={{background:'white', padding:'25px', borderRadius:'12px', boxShadow:'0 2px 10px rgba(0,0,0,0.05)'}}>
@@ -130,7 +173,7 @@ export default function Dashboard({ user, onLogout }) {
         )}
       </main>
 
-      {/* ---------------- MODAL ---------------- */}
+      {/* MODAL */}
       {selectedClient && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
