@@ -9,6 +9,8 @@ const clientRoutes = require('./src/routes/clientRoutes')
 const policyRoutes = require('./src/routes/policyRoutes')
 const recordsRoutes = require('./src/routes/recordsRoutes')
 const metricsRoutes = require('./src/routes/metricsRoutes')
+const notificationRoutes = require('./src/routes/notificationRoutes')
+const { initCronJob } = require('./src/controllers/notificationController')
 
 const app = express()
 const PORT = 3000
@@ -42,6 +44,10 @@ app.use('/api/clientes', clientRoutes)
 app.use('/api/polizas', policyRoutes)
 app.use('/api/registros', recordsRoutes)
 app.use('/api/metricas', metricsRoutes)
+app.use('/api/notificaciones', notificationRoutes)
+
+// Iniciar el reloj
+initCronJob()
 
 app.listen(PORT, () => {
   console.log(`🛡️ Servidor BLINDADO corriendo en http://localhost:${PORT}`)

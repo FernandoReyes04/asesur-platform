@@ -5,6 +5,7 @@ import ClientManagement from './ClientManagement'
 import PolicyManagement from './PolicyManagement'
 import RecordsView from './RecordsView' 
 import MetricsView from './MetricsView'
+import NotificationsView from './NotificationsView'
 
 export default function Dashboard({ user, onLogout }) {
   // Estados de Vista
@@ -109,6 +110,9 @@ export default function Dashboard({ user, onLogout }) {
              <button onClick={() => setCurrentView('metricas')} style={btnStyle('metricas')}>
    <span>📈</span> {isSidebarOpen && <span>Reportes y Ganancias</span>}
 </button>
+             <button onClick={() => setCurrentView('notificaciones')} style={btnStyle('notificaciones')}>
+   <span>🔔</span> {isSidebarOpen && <span>Notificaciones</span>}
+</button>
            </nav>
         </div>
         
@@ -145,7 +149,10 @@ export default function Dashboard({ user, onLogout }) {
           <RecordsView />
           ) : currentView === 'metricas' ? (
    <MetricsView />
+        ) : currentView === 'notificaciones' ? (
+          <NotificationsView user={user} />
         ) : (
+
           <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
              <div style={{background:'white', padding:'25px', borderRadius:'12px', boxShadow:'0 2px 10px rgba(0,0,0,0.05)'}}>
                 <h3 style={{marginTop:0, color:'#1e293b'}}>📅 Actividad Reciente</h3>

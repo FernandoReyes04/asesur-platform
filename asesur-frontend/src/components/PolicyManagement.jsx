@@ -205,7 +205,7 @@ export default function PolicyManagement() {
                 <div>
                     <label style={labelStyle}>Aseguradora</label>
                     <select value={policyData.aseguradora} onChange={e => setPolicyData({...policyData, aseguradora:e.target.value})} style={inputStyle}>
-                    <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>El Aguila</option><option>Axxa</option>
+                    <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>HDI</option><option>Axa</option>
                     </select>
                 </div>
 
