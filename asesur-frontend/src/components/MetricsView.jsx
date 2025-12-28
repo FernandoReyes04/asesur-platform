@@ -157,7 +157,7 @@ export default function MetricsView() {
         {/* 2. GRÁFICA DE BARRAS (CONTEXTO) */}
         {/* Esta se queda Global a propósito para que compares el mes seleccionado vs los demás */}
         <div style={{ background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', minHeight: '400px' }}>
-            <h3 style={{marginTop:0, color:'#0f172a'}}>💰 Tendencia Mensual (Contexto)</h3>
+            <h3 style={{marginTop:0, color:'#0f172a'}}>💰 Tendencia Mensual</h3>
             <p style={{fontSize:'12px', color:'#64748b', marginTop:-10, marginBottom:20}}>
                 Comparativa de todos los meses registrados.
             </p>
