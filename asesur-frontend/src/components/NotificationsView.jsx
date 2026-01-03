@@ -1,156 +1,231 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../supabaseClient' // Asegúrate que esta ruta sea correcta
+import { useEffect, useState, useMemo } from 'react'
 
-export default function NotificationsView({ user }) {
-  const [data, setData] = useState({ email: '', upcoming: [] })
-  const [newEmail, setNewEmail] = useState('')
-  const [password, setPassword] = useState('')
+export default function NotificationsView() {
+  const [allReceipts, setAllReceipts] = useState([]) // Todos los datos crudos
+  const [filteredReceipts, setFilteredReceipts] = useState([]) // Datos filtrados para mostrar
   const [loading, setLoading] = useState(true)
+
+  // --- ESTADOS DE FILTROS ---
+  const [filterDate, setFilterDate] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('Todos')
 
   useEffect(() => {
     fetch('http://localhost:3000/api/notificaciones')
       .then(res => res.json())
-      .then(d => {
-        setData(d)
-        setNewEmail(d.email || '')
+      .then(result => {
+        // 1. Unificamos Vencidos y Próximos en una sola lista maestra
+        // Agregamos una etiqueta 'status' para poder filtrar
+        const overdue = (result.overdue || []).map(i => ({ ...i, status: 'Vencido' }))
+        const upcoming = (result.upcoming || []).map(i => ({ ...i, status: 'Por Vencer' }))
+        
+        const combined = [...overdue, ...upcoming].sort((a,b) => new Date(a.recibo_inicio) - new Date(b.recibo_inicio))
+        
+        setAllReceipts(combined)
+        setFilteredReceipts(combined)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error(err)
         setLoading(false)
       })
   }, [])
 
-  const handleUpdate = async (e) => {
-    e.preventDefault()
-    if (!password) return alert("Ingresa tu contraseña para confirmar")
+  // --- LÓGICA DE FILTRADO ---
+  const handleFilter = () => {
+    let result = allReceipts
 
-    try {
-        // 1. VERIFICACIÓN DE SEGURIDAD (FRONTEND)
-        // Intentamos iniciar sesión con la contraseña ingresada.
-        // Si la contraseña es incorrecta, Supabase lanzará un error aquí.
-        const { error: authError } = await supabase.auth.signInWithPassword({
-            email: user.email, // Usamos el email del usuario logueado
-            password: password
-        })
-
-        if (authError) {
-            alert("⛔ Contraseña incorrecta. No se puede autorizar el cambio.")
-            return
-        }
-
-        // 2. SI LA CONTRASEÑA ES CORRECTA, LLAMAMOS AL BACKEND
-        const res = await fetch('http://localhost:3000/api/notificaciones/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                newEmail,
-                // Ya no enviamos la contraseña al backend, ya verificamos que es él.
-            })
-        })
-
-        const response = await res.json()
-        
-        if (res.ok) {
-            alert("✅ " + response.message)
-            setPassword('') 
-            setData(prev => ({ ...prev, email: newEmail }))
-        } else {
-            alert("Error del servidor: " + response.error)
-        }
-
-    } catch (error) {
-        console.error(error)
-        alert("Ocurrió un error inesperado")
+    // 1. Filtro por Fecha Exacta
+    if (filterDate) {
+        result = result.filter(item => item.recibo_inicio === filterDate)
     }
+
+    // 2. Búsqueda por Póliza o Cliente
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase()
+        result = result.filter(item => 
+            item.numero_poliza.toLowerCase().includes(term) ||
+            item.aseguradora.toLowerCase().includes(term) ||
+            item.clientes?.nombre?.toLowerCase().includes(term) ||
+            item.clientes?.apellido?.toLowerCase().includes(term)
+        )
+    }
+
+    // 3. Filtro por Estatus
+    if (filterStatus !== 'Todos') {
+        result = result.filter(item => item.status === filterStatus)
+    }
+
+    setFilteredReceipts(result)
   }
 
-  // Calculadora de días
-  const getDaysLeft = (dateStr) => {
-    const diff = new Date(dateStr) - new Date()
-    return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  const clearFilters = () => {
+      setFilterDate('')
+      setSearchTerm('')
+      setFilterStatus('Todos')
+      setFilteredReceipts(allReceipts)
   }
 
-  if (loading) return <div style={{padding:'40px'}}>Cargando...</div>
+  // --- LÓGICA PARA LA LÍNEA DE TIEMPO (Agrupar por fecha) ---
+  const timelineData = useMemo(() => {
+      const groups = {}
+      filteredReceipts.forEach(item => {
+          const date = item.recibo_inicio
+          if(!groups[date]) groups[date] = 0
+          groups[date]++
+      })
+      // Tomamos las primeras 4 fechas únicas para mostrar en el timeline
+      return Object.keys(groups).sort().slice(0, 4).map(date => ({
+          date,
+          count: groups[date]
+      }))
+  }, [filteredReceipts])
+
+  const money = (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val)
+
+  // --- ESTILOS ---
+  const containerStyle = { maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif', color:'#334155' }
+  const cardStyle = { background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom:'30px' }
+  const labelStyle = { display:'block', fontSize:'12px', fontWeight:'bold', marginBottom:'5px', color:'#64748b' }
+  const inputStyle = { width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #e2e8f0', fontSize:'14px' }
+  const btnStyle = { padding:'10px 20px', borderRadius:'6px', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'13px' }
+
+  if (loading) return <div style={{padding:'40px', color:'#64748b'}}>Cargando tablero...</div>
 
   return (
-    <div style={{maxWidth:'1000px', margin:'0 auto'}}>
-      <h2 style={{color:'#0f172a'}}>🔔 Centro de Notificaciones y Cobranza</h2>
+    <div style={containerStyle}>
+      
+      <h2 style={{color:'#0f172a', marginBottom:'20px'}}>Tablero de Control de Recibos</h2>
 
-      <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:'30px'}}>
-        
-        {/* IZQUIERDA: MONITOR */}
-        <div style={{background:'white', padding:'25px', borderRadius:'12px', boxShadow:'0 4px 6px rgba(0,0,0,0.05)'}}>
-          <h3 style={{marginTop:0, color:'#b91c1c'}}>⚠️ Próximos Vencimientos (Monitor)</h3>
-          <p style={{fontSize:'13px', color:'#64748b'}}>El sistema avisará por correo automáticamente cuando falten 15 días.</p>
-          
-          <div style={{maxHeight:'400px', overflowY:'auto'}}>
-            <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
-              <thead>
-                <tr style={{textAlign:'left', color:'#64748b', borderBottom:'1px solid #e2e8f0'}}>
-                  <th style={{padding:'10px'}}>Días Restantes</th>
-                  <th>Cliente</th>
-                  <th>Monto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.upcoming.map(p => {
-                  const days = getDaysLeft(p.fecha_vencimiento_recibo)
-                  return (
-                    <tr key={p.id} style={{borderBottom:'1px solid #f1f5f9'}}>
-                      <td style={{padding:'10px'}}>
-                        <span style={{
-                          background: days === 15 ? '#fef08a' : days < 15 ? '#fecaca' : '#e0f2fe',
-                          color: days === 15 ? '#854d0e' : days < 15 ? '#991b1b' : '#075985',
-                          padding:'3px 8px', borderRadius:'12px', fontWeight:'bold', fontSize:'11px'
-                        }}>
-                          {days} días
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{fontWeight:'bold'}}>{p.clientes?.nombre} {p.clientes?.apellido}</div>
-                        <div style={{fontSize:'11px', color:'#94a3b8'}}>{p.aseguradora} - {p.numero_poliza}</div>
-                      </td>
-                      <td style={{fontWeight:'bold'}}>${p.prima_total}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+      {/* 1. SECCIÓN DE FILTROS */}
+      <div style={cardStyle}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'20px', alignItems:'end'}}>
+              
+              <div>
+                  <label style={labelStyle}>Fecha de cobro</label>
+                  <input type="date" value={filterDate} onChange={(e)=>setFilterDate(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div>
+                  <label style={labelStyle}>Buscar póliza o cliente</label>
+                  <input type="text" placeholder="Ej. 15025..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div>
+                  <label style={labelStyle}>Buscar por estatus</label>
+                  <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} style={inputStyle}>
+                      <option>Todos</option>
+                      <option>Vencido</option>
+                      <option>Por Vencer</option>
+                  </select>
+              </div>
+
+              <div style={{display:'flex', gap:'10px'}}>
+                  <button onClick={handleFilter} style={{...btnStyle, background:'#000080', color:'white'}}>BUSCAR</button>
+                  <button onClick={clearFilters} style={{...btnStyle, background:'transparent', color:'#000080', display:'flex', alignItems:'center', gap:'5px'}}>
+                      ✕ LIMPIAR FILTROS
+                  </button>
+              </div>
           </div>
-        </div>
-
-        {/* DERECHA: CONFIGURACIÓN */}
-        <div style={{background:'white', padding:'25px', borderRadius:'12px', boxShadow:'0 4px 6px rgba(0,0,0,0.05)', height:'fit-content'}}>
-          <h3 style={{marginTop:0, color:'#1e293b'}}>⚙️ Configuración de Envío</h3>
-          
-          <form onSubmit={handleUpdate} style={{display:'flex', flexDirection:'column', gap:'15px'}}>
-            <div>
-              <label style={{display:'block', fontSize:'12px', fontWeight:'bold', color:'#475569', marginBottom:'5px'}}>Correo del Equipo</label>
-              <input 
-                type="email" 
-                value={newEmail} 
-                onChange={e=>setNewEmail(e.target.value)} 
-                style={{width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #cbd5e1'}}
-                required
-              />
-            </div>
-
-            <div style={{padding:'15px', background:'#f8fafc', borderRadius:'8px', border:'1px solid #e2e8f0'}}>
-              <label style={{display:'block', fontSize:'12px', fontWeight:'bold', color:'#dc2626', marginBottom:'5px'}}>🔒 Seguridad Requerida</label>
-              <input 
-                type="password" 
-                placeholder="Contraseña de Administrador"
-                value={password}
-                onChange={e=>setPassword(e.target.value)}
-                style={{width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #cbd5e1'}}
-                required
-              />
-            </div>
-
-            <button type="submit" style={{padding:'12px', background:'#0f172a', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', fontWeight:'bold'}}>
-              Guardar Cambios
-            </button>
-          </form>
-        </div>
-
       </div>
+
+      {/* 2. LÍNEA DE TIEMPO (TIMELINE) */}
+      <div style={{marginBottom:'30px'}}>
+          <h3 style={{color:'#475569', marginBottom:'15px'}}>Calendario de recibos próximos a vencer</h3>
+          
+          {timelineData.length === 0 ? (
+              <p style={{color:'#94a3b8', fontStyle:'italic'}}>No hay datos para mostrar en la línea de tiempo.</p>
+          ) : (
+            <div style={{position:'relative', padding:'40px 0'}}>
+                {/* La línea gris de fondo */}
+                <div style={{position:'absolute', top:'50%', left:'5%', right:'5%', height:'8px', background:'#e2e8f0', borderRadius:'4px', zIndex:0}}></div>
+                
+                <div style={{display:'flex', justifyContent:'space-between', position:'relative', zIndex:1, padding:'0 5%'}}>
+                    {timelineData.map((item, index) => {
+                        // Colores alternados para los puntos estilo pastel
+                        const colors = ['#fca5a5', '#fde047', '#86efac', '#a5b4fc']
+                        const color = colors[index % colors.length]
+                        
+                        return (
+                            <div key={index} style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                <div style={{fontSize:'12px', fontWeight:'bold', color:'#334155', marginBottom:'5px'}}>
+                                    {item.date}
+                                </div>
+                                <div style={{fontSize:'10px', color:'#64748b', marginBottom:'10px'}}>
+                                    ({item.count} recibos)
+                                </div>
+                                {/* El Pin/Punto */}
+                                <div style={{
+                                    width:'20px', height:'20px', background:color, borderRadius:'50%', 
+                                    border:'4px solid white', boxShadow:'0 2px 5px rgba(0,0,0,0.1)'
+                                }}></div>
+                                <div style={{fontSize:'10px', color:'#64748b', marginTop:'10px'}}>
+                                    Vencen {item.count} pólizas
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+          )}
+      </div>
+
+      {/* 3. TABLA DE DETALLES */}
+      <div>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
+              <h3 style={{margin:0, color:'#0f172a'}}>Detalle de Recibos</h3>
+          </div>
+
+          <div style={{background:'white', borderRadius:'12px', overflow:'hidden', boxShadow:'0 4px 6px rgba(0,0,0,0.05)'}}>
+              <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
+                  <thead>
+                      <tr style={{background:'#000080', color:'white', textAlign:'left'}}>
+                          <th style={{padding:'15px'}}>Póliza</th>
+                          <th style={{padding:'15px'}}>Aseguradora</th>
+                          <th style={{padding:'15px'}}>Cliente</th>
+                          <th style={{padding:'15px'}}>Teléfono</th>
+                          <th style={{padding:'15px'}}>Fecha de Cobro</th>
+                          <th style={{padding:'15px'}}>Monto</th>
+                          <th style={{padding:'15px'}}>Estatus</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {filteredReceipts.length === 0 ? (
+                          <tr><td colSpan="7" style={{padding:'30px', textAlign:'center', color:'#94a3b8'}}>No se encontraron recibos con los filtros actuales.</td></tr>
+                      ) : (
+                          filteredReceipts.map((item, i) => (
+                              <tr key={i} style={{borderBottom:'1px solid #f1f5f9', background: i%2===0 ? 'white' : '#f8fafc'}}>
+                                  <td style={{padding:'15px', fontWeight:'bold', color:'#334155'}}>{item.numero_poliza}</td>
+                                  <td style={{padding:'15px'}}>{item.aseguradora}</td>
+                                  <td style={{padding:'15px', textTransform:'uppercase'}}>
+                                      {item.clientes?.nombre} {item.clientes?.apellido}
+                                  </td>
+                                  <td style={{padding:'15px'}}>{item.clientes?.telefono || '-'}</td>
+                                  <td style={{padding:'15px'}}>{item.recibo_inicio}</td>
+                                  <td style={{padding:'15px', fontWeight:'bold'}}>{money(item.prima_total)}</td>
+                                  <td style={{padding:'15px'}}>
+                                      <span style={{
+                                          background: item.status === 'Vencido' ? '#ef4444' : '#f59e0b',
+                                          color: 'white',
+                                          padding: '4px 10px',
+                                          borderRadius: '6px',
+                                          fontWeight: 'bold',
+                                          fontSize: '11px',
+                                          display: 'inline-block',
+                                          textAlign: 'center',
+                                          width: '90px'
+                                      }}>
+                                          {item.status === 'Vencido' ? 'VENCIDO' : 'POR VENCER'}
+                                      </span>
+                                  </td>
+                              </tr>
+                          ))
+                      )}
+                  </tbody>
+              </table>
+          </div>
+      </div>
+
     </div>
   )
 }

@@ -4,102 +4,82 @@ const supabase = require('../config/supabase')
 const updatePolicyStatuses = async () => {
   const today = new Date().toISOString().split('T')[0] 
 
-  // 1. Marcar VENCIDO
+  // 1. Marcar VENCIDO: Si hoy es después del inicio del recibo y no ha pagado
   const { error: errorVencido } = await supabase
     .from('polizas')
     .update({ estado: 'vencido' })
-    .lt('fecha_vencimiento_recibo', today)
+    .lt('recibo_inicio', today) 
     .neq('estado', 'pagado')
 
-  // 2. Marcar PENDIENTE
+  // 2. Marcar PENDIENTE: Si hoy es antes o igual al inicio del recibo
   const { error: errorPendiente } = await supabase
     .from('polizas')
     .update({ estado: 'pendiente' })
-    .gte('fecha_vencimiento_recibo', today)
+    .gte('recibo_inicio', today)
     .neq('estado', 'pagado')
 
-  if (errorVencido || errorPendiente) console.error("Error actualizando estados:", errorVencido || errorPendiente)
+  if (errorVencido || errorPendiente) console.error("Error estados:", errorVencido || errorPendiente)
 }
 
 // --- ENDPOINTS ---
 
-// 1. OBTENER TODAS (Actualizado para traer teléfono)
 const getPolicies = async (req, res) => {
   await updatePolicyStatuses()
-
   const { data, error } = await supabase
     .from('polizas')
-    .select(`
-      *,
-      clientes ( nombre, apellido, telefono ) 
-    `) // <--- AQUÍ AGREGUÉ 'telefono'
-    .order('fecha_vencimiento_recibo', { ascending: true })
+    .select(`*, clientes ( nombre, apellido, telefono )`)
+    .order('recibo_inicio', { ascending: true }) // Ordenar por fecha de cobro
 
   if (error) return res.status(400).json({ error: error.message })
   res.json(data)
 }
 
-// 2. POR CLIENTE
 const getPoliciesByClient = async (req, res) => {
   const { cliente_id } = req.params
   await updatePolicyStatuses()
-
-  const { data, error } = await supabase
-    .from('polizas')
-    .select('*')
-    .eq('cliente_id', cliente_id)
-  
+  const { data, error } = await supabase.from('polizas').select('*').eq('cliente_id', cliente_id)
   if (error) return res.status(400).json({ error: error.message })
   res.json(data)
 }
 
-// 3. CREAR
+// 3. CREAR (NUEVA ESTRUCTURA)
 const createPolicy = async (req, res) => {
   const { 
-    cliente_id, numero_poliza, numero_recibo, fecha_vencimiento_recibo,
-    recibo_inicio, recibo_fin, forma_pago, prima_neta, prima_total, aseguradora
+    cliente_id, numero_poliza, numero_recibo,
+    poliza_inicio, poliza_fin,      // Vigencia General
+    recibo_inicio, recibo_fin,      // Vigencia Recibo
+    forma_pago, prima_neta, prima_total, aseguradora
   } = req.body
 
-  if (!cliente_id || !numero_poliza) {
-    return res.status(400).json({ error: 'Falta datos obligatorios' })
-  }
+  if (!cliente_id || !numero_poliza) return res.status(400).json({ error: 'Falta datos' })
   
   const { data, error } = await supabase
     .from('polizas')
     .insert([{ 
         cliente_id, numero_poliza, aseguradora, 
-        recibo_inicio, recibo_fin, fecha_vencimiento_recibo, 
+        poliza_inicio, poliza_fin, 
+        recibo_inicio, recibo_fin,
         prima_total, prima_neta, forma_pago, numero_recibo,
         estado: 'pendiente'
     }])
 
   if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Póliza creada exitosamente', data })
+  res.json({ message: 'Creado', data })
 }
 
-// 4. ACTUALIZAR
+// 4. ACTUALIZAR y 5. PAGAR (Igual que antes)
 const updatePolicy = async (req, res) => {
     const { id } = req.params
-    const updates = req.body
-    const { data, error } = await supabase
-      .from('polizas')
-      .update(updates)
-      .eq('id', id)
-  
+    const { data, error } = await supabase.from('polizas').update(req.body).eq('id', id)
     if (error) return res.status(400).json({ error: error.message })
-    res.json({ message: 'Póliza actualizada', data })
+    res.json({ message: 'Actualizado', data })
 }
 
-// 5. PAGAR
 const markAsPaid = async (req, res) => {
   const { id } = req.params
-  const { data, error } = await supabase
-    .from('polizas')
-    .update({ estado: 'pagado' })
-    .eq('id', id)
-
+  const { data, error } = await supabase.from('polizas').update({ estado: 'pagado' }).eq('id', id)
   if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Póliza marcada como PAGADA' })
+  res.json({ message: 'Pagado' })
 }
 
 module.exports = { getPolicies, getPoliciesByClient, createPolicy, updatePolicy, markAsPaid }
