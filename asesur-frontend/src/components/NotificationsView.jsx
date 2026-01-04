@@ -179,7 +179,7 @@ export default function NotificationsView() {
           <div style={{background:'white', borderRadius:'12px', overflow:'hidden', boxShadow:'0 4px 6px rgba(0,0,0,0.05)'}}>
               <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
                   <thead>
-                      <tr style={{background:'#000080', color:'white', textAlign:'left'}}>
+                      <tr style={{background:'#1e1b4b', color:'white', textAlign:'left'}}>
                           <th style={{padding:'15px'}}>Póliza</th>
                           <th style={{padding:'15px'}}>Aseguradora</th>
                           <th style={{padding:'15px'}}>Cliente</th>

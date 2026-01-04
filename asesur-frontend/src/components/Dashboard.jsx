@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient' 
 import ClientManagement from './ClientManagement'
-import PolicyManagement from './PolicyManagement'
+// import PolicyManagement from './PolicyManagement' // Ya no se usa el componente combinado
+import PolicyForm from './PolicyForm' // <--- NUEVO
+import PolicyList from './PolicyList' // <--- NUEVO
 import RecordsView from './RecordsView' 
 import MetricsView from './MetricsView'
 import NotificationsView from './NotificationsView'
 import DashboardHome from './DashboardHome'
 import ProfileModal from './ProfileModal'
+import RenewalsView from './RenewalsView'
 
 export default function Dashboard({ user, onLogout }) {
   // Estados de Vista
@@ -14,8 +17,9 @@ export default function Dashboard({ user, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   
-  // --- NUEVO ESTADO: CONTROL DEL SUBMENÚ ADMINISTRACIÓN ---
+  // --- ESTADOS DE MENÚS DESPLEGABLES ---
   const [showAdminMenu, setShowAdminMenu] = useState(false)
+  const [showPoliciesMenu, setShowPoliciesMenu] = useState(false) // <--- NUEVO ESTADO
 
   // Estado para Datos del Perfil
   const [profileData, setProfileData] = useState({
@@ -92,9 +96,38 @@ export default function Dashboard({ user, onLogout }) {
              <button onClick={() => setCurrentView('register')} style={btnStyle('register')}>
                <span>👥</span> {isSidebarOpen && <span>Clientes</span>}
              </button>
-             <button onClick={() => setCurrentView('polizas')} style={btnStyle('polizas')}>
-               <span>📄</span> {isSidebarOpen && <span>Pólizas</span>}
+
+             {/* --- MENÚ DESPLEGABLE: PÓLIZAS (NUEVO) --- */}
+             <button 
+                onClick={() => {
+                    if(!isSidebarOpen) setIsSidebarOpen(true);
+                    setShowPoliciesMenu(!showPoliciesMenu);
+                }} 
+                style={{
+                    ...btnStyle('polizas'), 
+                    justifyContent: 'space-between', 
+                    background: (currentView === 'polizas-nueva' || currentView === 'polizas-cartera') ? '#1e293b' : 'transparent'
+                }}
+             >
+               <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
+                   <span>📄</span> 
+                   {isSidebarOpen && <span>Gestión de Pólizas</span>}
+               </div>
+               {isSidebarOpen && <span style={{fontSize:'10px'}}>{showPoliciesMenu ? '▼' : '▶'}</span>}
              </button>
+
+             {/* SUBMENÚ PÓLIZAS */}
+             {isSidebarOpen && showPoliciesMenu && (
+                 <div style={{background: '#0f172a', marginBottom: '5px', borderRadius: '0 0 6px 6px'}}>
+                     <button onClick={() => setCurrentView('polizas-nueva')} style={subBtnStyle('polizas-nueva')}>
+                        ➕ Nueva Póliza
+                     </button>
+                     <button onClick={() => setCurrentView('polizas-cartera')} style={subBtnStyle('polizas-cartera')}>
+                        📋 Cartera
+                     </button>
+                 </div>
+             )}
+
              <button onClick={() => setCurrentView('registros')} style={btnStyle('registros')}>
                <span>📂</span> {isSidebarOpen && <span>Registros</span>}
              </button>
@@ -102,7 +135,7 @@ export default function Dashboard({ user, onLogout }) {
                <span>📈</span> {isSidebarOpen && <span>Reportes</span>}
              </button>
 
-             {/* --- SECCIÓN DE ADMINISTRACIÓN (DESPLEGABLE) --- */}
+             {/* --- MENÚ DESPLEGABLE: ADMINISTRACIÓN --- */}
              <button 
                 onClick={() => {
                     if(!isSidebarOpen) setIsSidebarOpen(true); // Abrir sidebar si está cerrado
@@ -121,7 +154,7 @@ export default function Dashboard({ user, onLogout }) {
                {isSidebarOpen && <span style={{fontSize:'10px'}}>{showAdminMenu ? '▼' : '▶'}</span>}
              </button>
 
-             {/* SUBMENÚ (Solo visible si el sidebar y el menú están abiertos) */}
+             {/* SUBMENÚ ADMINISTRACIÓN */}
              {isSidebarOpen && showAdminMenu && (
                  <div style={{background: '#0f172a', marginBottom: '5px', borderRadius: '0 0 6px 6px'}}>
                      <button onClick={() => setCurrentView('recibos')} style={subBtnStyle('recibos')}>
@@ -150,7 +183,8 @@ export default function Dashboard({ user, onLogout }) {
               {/* TÍTULOS DINÁMICOS */}
               {currentView === 'home' ? 'Tablero de Control' : 
                currentView === 'register' ? 'Gestión de Clientes' : 
-               currentView === 'polizas' ? 'Gestión de Pólizas' : 
+               currentView === 'polizas-nueva' ? 'Registro de Pólizas' : 
+               currentView === 'polizas-cartera' ? 'Cartera de Pólizas' :
                currentView === 'registros' ? 'Consulta de Registros' :
                currentView === 'metricas' ? 'Reportes Financieros' : 
                currentView === 'recibos' ? 'Gestión de Recibos y Cobranza' :
@@ -188,21 +222,18 @@ export default function Dashboard({ user, onLogout }) {
         {/* --- CONTROLADOR DE VISTAS --- */}
         {currentView === 'register' ? (
             <ClientManagement user={user} onSuccess={() => setCurrentView('home')} />
-        ) : currentView === 'polizas' ? (
-            <PolicyManagement />
+        ) : currentView === 'polizas-nueva' ? (
+            <PolicyForm /> // <--- Vista Formulario
+        ) : currentView === 'polizas-cartera' ? (
+            <PolicyList /> // <--- Vista Lista
         ) : currentView === 'registros' ? (
             <RecordsView />
         ) : currentView === 'metricas' ? (
             <MetricsView />
         ) : currentView === 'recibos' ? (
-            // AQUI USAMOS TU VISTA DE NOTIFICACIONES PARA LOS RECIBOS
             <NotificationsView user={user} />
         ) : currentView === 'renovaciones' ? (
-            // VISTA TEMPORAL PARA RENOVACIONES
-            <div style={{textAlign:'center', padding:'50px', color:'#64748b', background:'white', borderRadius:'12px'}}>
-                <h2>🔄 Módulo de Renovaciones</h2>
-                <p>Esta funcionalidad estará disponible próximamente.</p>
-            </div>
+            <RenewalsView />
         ) : (
             <DashboardHome userName={profileData.nombre} />
         )}

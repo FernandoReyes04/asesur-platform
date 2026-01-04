@@ -189,8 +189,51 @@ const updateNotificationEmail = async (req, res) => {
   }
 }
 
-// CAMBIO EN EL ROUTER:
-// Asegúrate de que en tu archivo de rutas (routes.js o index.js) tengas esto conectado:
-// router.get('/notificaciones', notificationController.getNotificationData)
+// 4. NUEVO: OBTENER RENOVACIONES (Próximos 45 días)
+const getRenewals = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Rango de anticipación para renovar (ej. 45 días)
+    const limitDate = new Date()
+    limitDate.setDate(limitDate.getDate() + 45)
+    const limitStr = limitDate.toISOString().split('T')[0]
 
-module.exports = { initCronJob, getNotificationData, updateNotificationEmail }
+    // Buscamos por 'poliza_fin'
+    const { data: renewals, error } = await supabase
+      .from('polizas')
+      .select(`
+        id, 
+        numero_poliza, 
+        aseguradora, 
+        poliza_fin, 
+        prima_total, 
+        clientes(nombre, apellido, telefono, email)
+      `)
+      .gte('poliza_fin', today)      // Que venzan de hoy en adelante
+      .lte('poliza_fin', limitStr)   // Hasta dentro de 45 días
+      .order('poliza_fin', { ascending: true })
+
+    if (error) throw error
+
+    // También buscamos las VENCIDAS recientemente (para intentar recuperarlas)
+    const { data: expired } = await supabase
+      .from('polizas')
+      .select(`*`)
+      .lt('poliza_fin', today)
+      .gt('poliza_fin', new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString()) // Vencidas hace menos de 2 meses
+      .order('poliza_fin', { ascending: false })
+
+    res.json({ 
+        upcoming: renewals || [],
+        expired: expired || [] 
+    })
+
+  } catch (error) {
+    console.error("Error renovaciones:", error)
+    res.status(500).json({ error: error.message })
+  }
+}
+
+// NO OLVIDES AGREGARLO AL EXPORT
+module.exports = { initCronJob, getNotificationData, updateNotificationEmail, getRenewals }
