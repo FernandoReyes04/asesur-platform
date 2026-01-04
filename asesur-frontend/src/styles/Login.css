@@ -1,0 +1,108 @@
+/* src/styles/Login.css */
+
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-title {
+  margin-bottom: 10px;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.login-subtitle {
+  color: #94a3b8;
+  margin-bottom: 30px;
+  font-size: 1rem;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box; /* Importante para que el padding no rompa el width */
+}
+
+.login-input::placeholder {
+  color: #cbd5e1;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: #38bdf8;
+  color: #0f172a;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+  background: #0ea5e9;
+  transform: translateY(-1px);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-btn-recover {
+  background: #f59e0b;
+  color: white;
+}
+
+.login-btn-recover:hover {
+  background: #d97706;
+}
+
+.login-link-container {
+  margin-top: 20px;
+}
+
+.login-link {
+  color: #94a3b8;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+  display: inline-block;
+  transition: color 0.2s;
+}
+
+.login-link:hover {
+  color: #38bdf8;
+}
+
+.recover-text {
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 20px;
+  text-align: left;
+  line-height: 1.5;
+}

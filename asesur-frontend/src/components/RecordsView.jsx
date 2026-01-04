@@ -5,6 +5,9 @@ export default function RecordsView() {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   
+  // ESTADO PARA CONTROLAR EL ACORDEÓN (ID del cliente expandido)
+  const [expandedClientId, setExpandedClientId] = useState(null)
+
   // ESTADOS DEL MODAL
   const [selectedRecord, setSelectedRecord] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -20,7 +23,14 @@ export default function RecordsView() {
       const response = await fetch(`http://localhost:3000/api/registros/search?q=${term}`)
       const data = await response.json()
       setResults(data)
+      setExpandedClientId(null) // Colapsar todo al buscar de nuevo
     } catch (error) { console.error(error) } finally { setLoading(false) }
+  }
+
+  // --- FUNCIÓN PARA ALTERNAR DESPLIEGUE ---
+  const toggleExpand = (clientId) => {
+      // Si ya está abierto, lo cierra (null). Si no, lo abre (clientId).
+      setExpandedClientId(expandedClientId === clientId ? null : clientId)
   }
 
   // Abrir Modal y preparar datos
@@ -78,47 +88,109 @@ export default function RecordsView() {
         <input type="text" placeholder="🔎 Buscar por Nombre, Apellido o Número de Póliza..." value={searchTerm} onChange={(e) => handleSearch(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '16px', boxSizing: 'border-box' }} />
       </div>
 
-      {/* RESULTADOS (LISTA) */}
+      {/* RESULTADOS (LISTA ACORDEÓN) */}
       {loading ? <p>Cargando...</p> : results.length === 0 ? <p style={{textAlign:'center', color:'#64748b'}}>Sin resultados.</p> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {results.map(cliente => (
-            <div key={cliente.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-              <div style={{ background: '#f8fafc', padding: '15px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div><h3 style={{ margin: 0, color: '#334155' }}>{cliente.nombre} {cliente.apellido}</h3><span style={{ fontSize: '12px', color: '#64748b' }}>RFC: {cliente.rfc || 'N/A'}</span></div>
-                <span style={{ background: '#3b82f6', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>{cliente.polizas.length} Póliza(s)</span>
-              </div>
-              <div style={{ padding: '20px' }}>
-                {cliente.polizas.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Sin pólizas.</p> : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ color: '#64748b', textAlign: 'left', borderBottom: '2px solid #f1f5f9' }}>
-                        <th style={{ padding: '8px' }}>Póliza</th><th style={{ padding: '8px' }}>Vigencia</th><th style={{ padding: '8px' }}>Total</th><th style={{ padding: '8px' }}>Estado</th><th style={{ padding: '8px', textAlign:'right' }}>Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cliente.polizas.map(p => {
-                        // Usamos el nuevo helper de colores
-                        const statusStyle = getStatusStyle(p.estado)
-                        return (
-                            <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '10px', fontWeight: 'bold' }}>{p.numero_poliza}</td>
-                            <td style={{ padding: '10px' }}>{p.recibo_inicio} al {p.recibo_fin}</td>
-                            <td style={{ padding: '10px' }}>{money(p.prima_total)}</td>
-                            <td style={{ padding: '10px' }}>
-                                <span style={{ color: statusStyle.text, background: statusStyle.bg, padding: '2px 6px', borderRadius: '4px', fontSize: '11px', textTransform: 'uppercase', fontWeight:'bold' }}>
-                                    {p.estado}
-                                </span>
-                            </td>
-                            <td style={{ padding: '10px', textAlign:'right' }}><button onClick={() => openModal(p, cliente)} style={{ border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', padding: '5px 10px', borderRadius: '4px', fontSize: '12px' }}>👁️ Ver</button></td>
-                            </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {results.map(cliente => {
+            const isExpanded = expandedClientId === cliente.id
+            
+            return (
+                <div key={cliente.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: isExpanded ? '0 4px 10px rgba(0,0,0,0.05)' : 'none', transition: 'all 0.2s' }}>
+                
+                {/* CABECERA CLICKABLE */}
+                <div 
+                    onClick={() => toggleExpand(cliente.id)}
+                    style={{ 
+                        background: isExpanded ? '#f1f5f9' : 'white', 
+                        padding: '15px 20px', 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        userSelect: 'none'
+                    }}
+                >
+                    <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                        {/* Icono de estado (si tiene pólizas o no) */}
+                        <div style={{
+                            width:'40px', height:'40px', borderRadius:'50%', 
+                            background: cliente.polizas.length > 0 ? '#eff6ff' : '#f3f4f6', 
+                            color: cliente.polizas.length > 0 ? '#3b82f6' : '#94a3b8',
+                            display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'bold'
+                        }}>
+                            {cliente.nombre.charAt(0).toUpperCase()}
+                        </div>
+                        
+                        <div>
+                            <h3 style={{ margin: 0, color: '#334155', fontSize:'16px' }}>{cliente.nombre} {cliente.apellido}</h3>
+                            <span style={{ fontSize: '12px', color: '#64748b' }}>RFC: {cliente.rfc || 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    <div style={{display:'flex', alignItems:'center', gap:'20px'}}>
+                        <span style={{ 
+                            background: cliente.polizas.length > 0 ? '#3b82f6' : '#e2e8f0', 
+                            color: cliente.polizas.length > 0 ? 'white' : '#64748b', 
+                            padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' 
+                        }}>
+                            {cliente.polizas.length} Póliza(s)
+                        </span>
+                        <span style={{color:'#64748b', fontSize:'18px', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition:'transform 0.2s'}}>
+                            ▼
+                        </span>
+                    </div>
+                </div>
+
+                {/* CONTENIDO DESPLEGABLE (TABLA) */}
+                {isExpanded && (
+                    <div style={{ padding: '0 20px 20px 20px', borderTop: '1px solid #e2e8f0', animation: 'fadeIn 0.3s' }}>
+                        <h4 style={{color:'#64748b', fontSize:'12px', textTransform:'uppercase', margin:'15px 0 10px 0'}}>Listado de Pólizas Asociadas</h4>
+                        
+                        {cliente.polizas.length === 0 ? <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', fontStyle:'italic' }}>Este cliente no tiene pólizas registradas.</p> : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead>
+                                <tr style={{ color: '#64748b', textAlign: 'left', borderBottom: '2px solid #f1f5f9' }}>
+                                <th style={{ padding: '10px' }}>No. Póliza</th>
+                                <th style={{ padding: '10px' }}>Aseguradora</th>
+                                <th style={{ padding: '10px' }}>Vigencia</th>
+                                <th style={{ padding: '10px' }}>Total</th>
+                                <th style={{ padding: '10px' }}>Estado</th>
+                                <th style={{ padding: '10px', textAlign:'right' }}>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cliente.polizas.map(p => {
+                                const statusStyle = getStatusStyle(p.estado)
+                                return (
+                                    <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '10px', fontWeight: 'bold', color:'#334155' }}>{p.numero_poliza}</td>
+                                    <td style={{ padding: '10px' }}>{p.aseguradora}</td>
+                                    <td style={{ padding: '10px', fontSize:'12px' }}>
+                                        <div style={{color:'#0f172a'}}>Del: {p.recibo_inicio}</div>
+                                        <div style={{color:'#64748b'}}>Al: {p.recibo_fin}</div>
+                                    </td>
+                                    <td style={{ padding: '10px', fontWeight:'bold' }}>{money(p.prima_total)}</td>
+                                    <td style={{ padding: '10px' }}>
+                                        <span style={{ color: statusStyle.text, background: statusStyle.bg, padding: '2px 8px', borderRadius: '4px', fontSize: '11px', textTransform: 'uppercase', fontWeight:'bold' }}>
+                                            {p.estado}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '10px', textAlign:'right' }}>
+                                        <button onClick={(e) => { e.stopPropagation(); openModal(p, cliente); }} style={{ border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', fontWeight:'bold', color:'#475569' }}>
+                                            👁️ Ver Detalle
+                                        </button>
+                                    </td>
+                                    </tr>
+                                )
+                                })}
+                            </tbody>
+                            </table>
+                        )}
+                    </div>
                 )}
-              </div>
-            </div>
-          ))}
+                </div>
+            )
+          })}
         </div>
       )}
 
@@ -212,7 +284,6 @@ export default function RecordsView() {
                             <option value="activa">ACTIVA</option><option value="cancelada">CANCELADA</option><option value="vencida">VENCIDA</option>
                         </select>
                     ) : (
-                        // AQUÍ TAMBIÉN CORREGIMOS EL COLOR EN EL MODAL
                         <span style={{fontWeight:'bold', color: getStatusStyle(selectedRecord.poliza.estado).text, textTransform:'uppercase'}}>
                             {selectedRecord.poliza.estado}
                         </span>
@@ -220,15 +291,15 @@ export default function RecordsView() {
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
-                     <div><span style={{display:'block', fontSize:'11px', color:'#94a3b8'}}>No. Recibo</span>{isEditing ? <input type="text" value={editFormData.numero_recibo} onChange={e=>setEditFormData({...editFormData, numero_recibo:e.target.value})} style={inputEditStyle} /> : <div style={{fontWeight:'500'}}>{selectedRecord.poliza.numero_recibo}</div>}</div>
-                     <div><span style={{display:'block', fontSize:'11px', color:'#94a3b8'}}>Forma Pago</span>{isEditing ? <select value={editFormData.forma_pago} onChange={e=>setEditFormData({...editFormData, forma_pago:e.target.value})} style={inputEditStyle}><option>Mensual</option><option>Semestral</option><option>Anual</option></select> : <div style={{fontWeight:'500'}}>{selectedRecord.poliza.forma_pago}</div>}</div>
+                      <div><span style={{display:'block', fontSize:'11px', color:'#94a3b8'}}>No. Recibo</span>{isEditing ? <input type="text" value={editFormData.numero_recibo} onChange={e=>setEditFormData({...editFormData, numero_recibo:e.target.value})} style={inputEditStyle} /> : <div style={{fontWeight:'500'}}>{selectedRecord.poliza.numero_recibo}</div>}</div>
+                      <div><span style={{display:'block', fontSize:'11px', color:'#94a3b8'}}>Forma Pago</span>{isEditing ? <select value={editFormData.forma_pago} onChange={e=>setEditFormData({...editFormData, forma_pago:e.target.value})} style={inputEditStyle}><option>Mensual</option><option>Semestral</option><option>Anual</option></select> : <div style={{fontWeight:'500'}}>{selectedRecord.poliza.forma_pago}</div>}</div>
                   </div>
 
-                  <div><span style={{display:'block', fontSize:'11px', color:'#94a3b8'}}>Vencimiento de Pago</span>{isEditing ? <input type="date" value={editFormData.fecha_vencimiento_recibo} onChange={e=>setEditFormData({...editFormData, fecha_vencimiento_recibo:e.target.value})} style={inputEditStyle} /> : <div style={{color:'#b91c1c', fontWeight:'bold'}}>{formatDate(selectedRecord.poliza.fecha_vencimiento_recibo)}</div>}</div>
+                  <div><span style={{display:'block', fontSize:'11px', color:'#94a3b8'}}>Vigencia del Recibo</span>{isEditing ? <div style={{display:'flex', gap:'5px'}}><input type="date" value={editFormData.recibo_inicio} onChange={e=>setEditFormData({...editFormData, recibo_inicio:e.target.value})} style={inputEditStyle} /><input type="date" value={editFormData.recibo_fin} onChange={e=>setEditFormData({...editFormData, recibo_fin:e.target.value})} style={inputEditStyle} /></div> : <div style={{color:'#0f172a', fontWeight:'bold'}}>Del {formatDate(selectedRecord.poliza.recibo_inicio)} al {formatDate(selectedRecord.poliza.recibo_fin)}</div>}</div>
                   
                   <div style={{background: isEditing ? '#fff7ed' : '#eff6ff', border: isEditing ? '1px solid #fdba74' : 'none', padding:'15px', borderRadius:'8px', marginTop:'10px'}}>
-                     <div style={{display:'flex', justifyContent:'space-between', marginBottom:'5px'}}><span style={{color:'#475569', fontSize:'13px'}}>Prima Neta:</span>{isEditing ? <input type="number" value={editFormData.prima_neta} onChange={e=>setEditFormData({...editFormData, prima_neta:e.target.value})} style={{...inputEditStyle, width:'100px'}} /> : <span style={{fontWeight:'500'}}>{money(selectedRecord.poliza.prima_neta)}</span>}</div>
-                     <div style={{display:'flex', justifyContent:'space-between', borderTop:'1px solid #bfdbfe', paddingTop:'5px'}}><span style={{color:'#1e40af', fontWeight:'bold'}}>Prima Total:</span>{isEditing ? <input type="number" value={editFormData.prima_total} onChange={e=>setEditFormData({...editFormData, prima_total:e.target.value})} style={{...inputEditStyle, width:'100px'}} /> : <span style={{color:'#1e40af', fontWeight:'bold', fontSize:'18px'}}>{money(selectedRecord.poliza.prima_total)}</span>}</div>
+                      <div style={{display:'flex', justifyContent:'space-between', marginBottom:'5px'}}><span style={{color:'#475569', fontSize:'13px'}}>Prima Neta:</span>{isEditing ? <input type="number" value={editFormData.prima_neta} onChange={e=>setEditFormData({...editFormData, prima_neta:e.target.value})} style={{...inputEditStyle, width:'100px'}} /> : <span style={{fontWeight:'500'}}>{money(selectedRecord.poliza.prima_neta)}</span>}</div>
+                      <div style={{display:'flex', justifyContent:'space-between', borderTop:'1px solid #bfdbfe', paddingTop:'5px'}}><span style={{color:'#1e40af', fontWeight:'bold'}}>Prima Total:</span>{isEditing ? <input type="number" value={editFormData.prima_total} onChange={e=>setEditFormData({...editFormData, prima_total:e.target.value})} style={{...inputEditStyle, width:'100px'}} /> : <span style={{color:'#1e40af', fontWeight:'bold', fontSize:'18px'}}>{money(selectedRecord.poliza.prima_total)}</span>}</div>
                   </div>
 
                 </div>

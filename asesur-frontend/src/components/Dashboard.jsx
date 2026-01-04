@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient' 
 import ClientManagement from './ClientManagement'
-// import PolicyManagement from './PolicyManagement' // Ya no se usa el componente combinado
-import PolicyForm from './PolicyForm' // <--- NUEVO
-import PolicyList from './PolicyList' // <--- NUEVO
+import PolicyForm from './PolicyForm'
+import PolicyList from './PolicyList'
 import RecordsView from './RecordsView' 
 import MetricsView from './MetricsView'
+import HistoryMetricsView from './HistoryMetricsView' // <--- IMPORTACIÓN NUEVA (PASO 3)
 import NotificationsView from './NotificationsView'
 import DashboardHome from './DashboardHome'
 import ProfileModal from './ProfileModal'
@@ -19,7 +19,7 @@ export default function Dashboard({ user, onLogout }) {
   
   // --- ESTADOS DE MENÚS DESPLEGABLES ---
   const [showAdminMenu, setShowAdminMenu] = useState(false)
-  const [showPoliciesMenu, setShowPoliciesMenu] = useState(false) // <--- NUEVO ESTADO
+  const [showPoliciesMenu, setShowPoliciesMenu] = useState(false) 
 
   // Estado para Datos del Perfil
   const [profileData, setProfileData] = useState({
@@ -65,16 +65,15 @@ export default function Dashboard({ user, onLogout }) {
   // --- ESTILOS ---
   const btnStyle = (viewName) => ({
     display: 'flex', alignItems: 'center', gap: '15px', width: '100%', padding: '12px',
-    background: currentView === viewName ? '#1e293b' : 'transparent',
-    border: 'none', color: currentView === viewName ? '#38bdf8' : '#94a3b8',
+    background: (currentView === viewName || (viewName === 'metricas' && currentView === 'history-metrics')) ? '#1e293b' : 'transparent',
+    border: 'none', color: (currentView === viewName || (viewName === 'metricas' && currentView === 'history-metrics')) ? '#38bdf8' : '#94a3b8',
     cursor: 'pointer', fontSize: '15px', borderRadius: '6px', marginBottom: '5px',
     textAlign: 'left'
   })
 
-  // Estilo para los botones del submenú (más pequeños y con sangría)
   const subBtnStyle = (viewName) => ({
     ...btnStyle(viewName),
-    paddingLeft: '45px', // Sangría
+    paddingLeft: '45px', 
     fontSize: '13px',
     color: currentView === viewName ? '#38bdf8' : '#cbd5e1'
   })
@@ -97,7 +96,7 @@ export default function Dashboard({ user, onLogout }) {
                <span>👥</span> {isSidebarOpen && <span>Clientes</span>}
              </button>
 
-             {/* --- MENÚ DESPLEGABLE: PÓLIZAS (NUEVO) --- */}
+             {/* --- MENÚ PÓLIZAS --- */}
              <button 
                 onClick={() => {
                     if(!isSidebarOpen) setIsSidebarOpen(true);
@@ -116,7 +115,6 @@ export default function Dashboard({ user, onLogout }) {
                {isSidebarOpen && <span style={{fontSize:'10px'}}>{showPoliciesMenu ? '▼' : '▶'}</span>}
              </button>
 
-             {/* SUBMENÚ PÓLIZAS */}
              {isSidebarOpen && showPoliciesMenu && (
                  <div style={{background: '#0f172a', marginBottom: '5px', borderRadius: '0 0 6px 6px'}}>
                      <button onClick={() => setCurrentView('polizas-nueva')} style={subBtnStyle('polizas-nueva')}>
@@ -135,10 +133,10 @@ export default function Dashboard({ user, onLogout }) {
                <span>📈</span> {isSidebarOpen && <span>Reportes</span>}
              </button>
 
-             {/* --- MENÚ DESPLEGABLE: ADMINISTRACIÓN --- */}
+             {/* --- MENÚ ADMINISTRACIÓN --- */}
              <button 
                 onClick={() => {
-                    if(!isSidebarOpen) setIsSidebarOpen(true); // Abrir sidebar si está cerrado
+                    if(!isSidebarOpen) setIsSidebarOpen(true); 
                     setShowAdminMenu(!showAdminMenu);
                 }} 
                 style={{
@@ -154,7 +152,6 @@ export default function Dashboard({ user, onLogout }) {
                {isSidebarOpen && <span style={{fontSize:'10px'}}>{showAdminMenu ? '▼' : '▶'}</span>}
              </button>
 
-             {/* SUBMENÚ ADMINISTRACIÓN */}
              {isSidebarOpen && showAdminMenu && (
                  <div style={{background: '#0f172a', marginBottom: '5px', borderRadius: '0 0 6px 6px'}}>
                      <button onClick={() => setCurrentView('recibos')} style={subBtnStyle('recibos')}>
@@ -187,6 +184,7 @@ export default function Dashboard({ user, onLogout }) {
                currentView === 'polizas-cartera' ? 'Cartera de Pólizas' :
                currentView === 'registros' ? 'Consulta de Registros' :
                currentView === 'metricas' ? 'Reportes Financieros' : 
+               currentView === 'history-metrics' ? 'Análisis Histórico' : // <--- NUEVO TÍTULO
                currentView === 'recibos' ? 'Gestión de Recibos y Cobranza' :
                currentView === 'renovaciones' ? 'Gestión de Renovaciones' : 'Panel'}
             </h1>
@@ -223,13 +221,17 @@ export default function Dashboard({ user, onLogout }) {
         {currentView === 'register' ? (
             <ClientManagement user={user} onSuccess={() => setCurrentView('home')} />
         ) : currentView === 'polizas-nueva' ? (
-            <PolicyForm /> // <--- Vista Formulario
+            <PolicyForm />
         ) : currentView === 'polizas-cartera' ? (
-            <PolicyList /> // <--- Vista Lista
+            <PolicyList />
         ) : currentView === 'registros' ? (
             <RecordsView />
         ) : currentView === 'metricas' ? (
-            <MetricsView />
+            // PASO 3: Conectamos el botón para ir al historial
+            <MetricsView onViewHistory={() => setCurrentView('history-metrics')} />
+        ) : currentView === 'history-metrics' ? (
+            // PASO 3: Nueva vista con botón para volver
+            <HistoryMetricsView onBack={() => setCurrentView('metricas')} />
         ) : currentView === 'recibos' ? (
             <NotificationsView user={user} />
         ) : currentView === 'renovaciones' ? (
