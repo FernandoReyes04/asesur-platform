@@ -115,7 +115,7 @@ export default function DashboardHome({ userName }) {
         
         {/* 1. TIPO DE CAMBIO */}
         <div className="dashboard-card">
-            <h3 className="card-title">💲 Tipo de cambio</h3>
+            <h3 className="card-title">Tipo de cambio</h3>
             <div className="table-container">
                 <table className="dashboard-table">
                     <thead>
@@ -142,7 +142,7 @@ export default function DashboardHome({ userName }) {
 
         {/* 2. COBRANZA RÁPIDA */}
         <div className="dashboard-card">
-            <h3 className="card-title">🔔 Cobranza Urgente (15 días)</h3>
+            <h3 className="card-title">Cobranza Urgente (15 días)</h3>
             {reminders.length === 0 ? (
                 <div className="empty-state">Todo al día. ¡Excelente!</div>
             ) : (
@@ -171,7 +171,7 @@ export default function DashboardHome({ userName }) {
 
         {/* 3. VENTAS DEL MES */}
         <div className="dashboard-card">
-            <h3 className="card-title">📊 Ventas del Mes Actual</h3>
+            <h3 className="card-title">Ventas del Mes Actual</h3>
             {pieData.length === 0 ? (
                 <div className="empty-state">Sin ventas registradas este mes.</div>
             ) : (
@@ -193,7 +193,7 @@ export default function DashboardHome({ userName }) {
 
         {/* 4. EQUIPO DE TRABAJO */}
         <div className="dashboard-card">
-            <h3 className="card-title">👥 Equipo de Trabajo</h3>
+            <h3 className="card-title">Equipo de Trabajo</h3>
             {team.length === 0 ? (
                 <p className="empty-state">No hay usuarios.</p>
             ) : (
@@ -206,9 +206,7 @@ export default function DashboardHome({ userName }) {
                             <div style={{flex:1}}>
                                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                                     <strong className="item-primary">{member.nombre}</strong>
-                                    <span className={`role-badge ${member.rol === 'admin' ? 'role-admin' : 'role-staff'}`}>
-                                        {member.rol || 'Staff'}
-                                    </span>
+                                    
                                 </div>
                                 <div className="item-secondary">{member.email}</div>
                             </div>
@@ -220,7 +218,7 @@ export default function DashboardHome({ userName }) {
 
         {/* 5. CUMPLEAÑOS */}
         <div className="dashboard-card">
-            <h3 className="card-title">🎂 Cumpleaños del Mes</h3>
+            <h3 className="card-title">Cumpleaños del Mes</h3>
             {birthdays.length === 0 ? (
                 <p className="empty-state">No hay cumpleañeros este mes.</p>
             ) : (

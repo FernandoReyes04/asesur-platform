@@ -56,7 +56,7 @@
   padding: 12px;
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: #ffffff;
   cursor: pointer;
   font-size: 15px;
   border-radius: 6px;
@@ -67,7 +67,7 @@
 
 .nav-btn:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  color: #ffffff;
 }
 
 .nav-btn.active {
@@ -103,7 +103,7 @@
 .sub-nav-btn {
   padding-left: 48px; /* Sangría */
   font-size: 13px;
-  color: #cbd5e1;
+  color: #ffffff;
 }
 
 @keyframes slideDown {
@@ -196,4 +196,11 @@
   font-size: 13px;
   color: #334155;
   font-weight: 600;
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
 }

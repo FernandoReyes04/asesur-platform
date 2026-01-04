@@ -11,6 +11,17 @@ import DashboardHome from './DashboardHome'
 import ProfileModal from './ProfileModal'
 import RenewalsView from './RenewalsView'
 
+import panelIconPanel from '../icons/panel.png'
+import panelIconClient from '../icons/cliente.png'
+import panelIconPolicies from '../icons/papel.png'
+import panelIconMore from '../icons/mas.png'
+import panelIconWallet from '../icons/cartera.png'
+import panelIconFolder from '../icons/carpeta.png'
+import panelIconStadistics from '../icons/tendencia.png'
+import panelIconConfig from '../icons/configuracion.png'
+import panelIconRecibe from '../icons/recibo.png'
+import panelIconCircle from '../icons/circulo.png'
+
 // IMPORTAMOS LOS ESTILOS
 import '../styles/Dashboard.css'
 
@@ -87,16 +98,18 @@ export default function Dashboard({ user, onLogout }) {
       <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div>
            <h2 onClick={()=>setIsSidebarOpen(!isSidebarOpen)} className="sidebar-header">
-             {isSidebarOpen ? 'ASESUR 🛡️' : '🛡️'}
+             {isSidebarOpen ? 'ASESUR' : 'A'}
            </h2>
            
            <nav className="nav-menu">
              <button onClick={() => setCurrentView('home')} className={getNavClass('home')}>
-               <span>📊</span> {isSidebarOpen && <span>Panel General</span>}
-             </button>
+              <img src={panelIconPanel} alt="Panel" className="nav-icon" /> 
+              {isSidebarOpen && <span>Panel General</span>}
+            </button>
              
              <button onClick={() => setCurrentView('register')} className={getNavClass('register')}>
-               <span>👥</span> {isSidebarOpen && <span>Clientes</span>}
+               <img src={panelIconClient} alt="Clientes" className="nav-icon" />
+               {isSidebarOpen && <span>Clientes</span>}
              </button>
 
              {/* --- MENÚ PÓLIZAS --- */}
@@ -108,7 +121,7 @@ export default function Dashboard({ user, onLogout }) {
                 className={getParentNavClass(currentView === 'polizas-nueva' || currentView === 'polizas-cartera')}
              >
                <div className="nav-icon-container">
-                   <span>📄</span> 
+                    <img src={panelIconPolicies} alt="Pólizas" className="nav-icon" />
                    {isSidebarOpen && <span>Gestión de Pólizas</span>}
                </div>
                {isSidebarOpen && <span className="arrow-icon">{showPoliciesMenu ? '▼' : '▶'}</span>}
@@ -117,21 +130,23 @@ export default function Dashboard({ user, onLogout }) {
              {isSidebarOpen && showPoliciesMenu && (
                  <div className="submenu-container">
                      <button onClick={() => setCurrentView('polizas-nueva')} className={getSubNavClass('polizas-nueva')}>
-                        ➕ Nueva Póliza
+                        <img src={panelIconMore} alt="Nueva Póliza" className="nav-icon" /> Nueva Póliza
                      </button>
                      <button onClick={() => setCurrentView('polizas-cartera')} className={getSubNavClass('polizas-cartera')}>
-                        📋 Cartera
+                        <img src={panelIconWallet} alt="Cartera Pólizas" className="nav-icon" /> Cartera de Pólizas
                      </button>
                  </div>
              )}
 
              <button onClick={() => setCurrentView('registros')} className={getNavClass('registros')}>
-               <span>📂</span> {isSidebarOpen && <span>Registros</span>}
+                <img src={panelIconFolder} alt="Registros" className="nav-icon" />
+               {isSidebarOpen && <span>Registros</span>}
              </button>
              
              {/* Reportes y métricas (incluye la vista de historial como activa) */}
              <button onClick={() => setCurrentView('metricas')} className={`nav-btn ${currentView === 'metricas' || currentView === 'history-metrics' ? 'active' : ''}`}>
-               <span>📈</span> {isSidebarOpen && <span>Reportes</span>}
+                <img src={panelIconStadistics} alt="Reportes" className="nav-icon" />
+               {isSidebarOpen && <span>Reportes</span>}
              </button>
 
              {/* --- MENÚ ADMINISTRACIÓN --- */}
@@ -143,8 +158,8 @@ export default function Dashboard({ user, onLogout }) {
                 className={getParentNavClass(currentView === 'recibos' || currentView === 'renovaciones')}
              >
                <div className="nav-icon-container">
-                   <span>⚙️</span> 
-                   {isSidebarOpen && <span>Administración</span>}
+                    <img src={panelIconConfig} alt="Administración" className="nav-icon" />
+                   {isSidebarOpen && <span>Cobranza</span>}
                </div>
                {isSidebarOpen && <span className="arrow-icon">{showAdminMenu ? '▼' : '▶'}</span>}
              </button>
@@ -152,10 +167,10 @@ export default function Dashboard({ user, onLogout }) {
              {isSidebarOpen && showAdminMenu && (
                  <div className="submenu-container">
                      <button onClick={() => setCurrentView('recibos')} className={getSubNavClass('recibos')}>
-                        🧾 Recibos (Cobranza)
+                        <img src={panelIconRecibe} alt="Recibos" className="nav-icon" /> Gestión de Recibos
                      </button>
                      <button onClick={() => setCurrentView('renovaciones')} className={getSubNavClass('renovaciones')}>
-                        🔄 Renovaciones
+                        <img src={panelIconCircle} alt="Renovaciones" className="nav-icon" /> Gestión de Renovaciones
                      </button>
                  </div>
              )}
