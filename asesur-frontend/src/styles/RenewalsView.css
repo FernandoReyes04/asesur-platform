@@ -1,0 +1,377 @@
+/* src/styles/RenewalsView.css */
+
+.renewals-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-title {
+  color: #0f172a;
+  margin: 0;
+}
+
+.toggle-panel-btn {
+  background: white;
+  border: 1px solid #cbd5e1;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.toggle-panel-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.main-layout {
+  display: flex;
+  align-items: start;
+}
+
+.content-area {
+  flex: 1;
+}
+
+/* --- FILTROS --- */
+.filters-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  margin-bottom: 30px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  align-items: end;
+}
+
+.filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #64748b;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-search {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+  background: #4f46e5; /* Indigo */
+  color: white;
+  transition: background 0.2s;
+}
+
+.btn-search:hover {
+  background: #4338ca;
+}
+
+.btn-clear {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+  background: transparent;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-clear:hover {
+  background: #eef2ff;
+}
+
+/* --- TIMELINE --- */
+.timeline-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  color: #475569;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.empty-timeline {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.timeline-container {
+  position: relative;
+  padding: 40px 0;
+}
+
+.timeline-track {
+  position: absolute;
+  top: 50%;
+  left: 5%;
+  right: 5%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  z-index: 0;
+}
+
+.timeline-points {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  padding: 0 5%;
+}
+
+.timeline-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.point-date {
+  font-size: 12px;
+  font-weight: bold;
+  color: #334155;
+  margin-bottom: 5px;
+}
+
+.point-label {
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.point-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.point-count {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* --- TABLA --- */
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.table-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.renewals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.renewals-table th {
+  background: #1e1b4b;
+  color: white;
+  text-align: left;
+  padding: 15px;
+}
+
+.renewals-table td {
+  padding: 15px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.renewals-table tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.td-policy { font-weight: bold; color: #334155; }
+.td-client { text-transform: uppercase; }
+.td-contact-sub { font-size: 11px; color: #64748b; }
+.td-date { font-weight: bold; }
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 10px;
+  display: inline-block;
+  text-align: center;
+  width: 100px;
+}
+
+.status-expired {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.status-upcoming {
+  background: #fef08a;
+  color: #854d0e;
+}
+
+/* --- PANEL LATERAL --- */
+.side-panel {
+  width: 320px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-left: 20px;
+  height: fit-content;
+  transition: all 0.3s ease;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.panel-title {
+  margin: 0;
+  color: #1e1b4b;
+  font-size: 16px;
+}
+
+.close-panel-btn {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.summary-box {
+  background: #f3f4f6;
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.summary-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.summary-text {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.3;
+}
+
+.panel-subtitle {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 20px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #f8fafc;
+  padding-bottom: 10px;
+}
+
+.stat-row.last {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #0f172a;
+}
+
+.icon-circle {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.download-btn {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  border: 1px solid #1e1b4b;
+  color: #1e1b4b;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.download-btn:hover {
+  background: #f8fafc;
+}
+
+.loading-text {
+  padding: 40px;
+  color: #64748b;
+  text-align: center;
+}
+
+.empty-table {
+  padding: 30px;
+  text-align: center;
+  color: #94a3b8;
+}

@@ -1,0 +1,166 @@
+/* src/styles/PolicyList.css */
+
+.policy-list-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-title {
+  color: #0f172a;
+  margin-bottom: 20px;
+}
+
+.list-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.card-title {
+  margin: 0;
+  color: #0f172a;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.loading-text {
+  color: #64748b;
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+}
+
+/* --- TABLA --- */
+.policy-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.policy-table th {
+  text-align: left;
+  color: #64748b;
+  border-bottom: 2px solid #f1f5f9;
+  padding: 10px;
+}
+
+.policy-table td {
+  padding: 15px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.policy-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Celdas específicas */
+.client-name {
+  font-weight: bold;
+  color: #0f172a;
+}
+
+.client-phone {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.insurer-name {
+  font-weight: bold;
+  color: #334155;
+}
+
+.policy-number {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.date-start {
+  font-weight: bold;
+  color: #334155;
+}
+
+.date-start.expired {
+  color: #ef4444;
+}
+
+.date-end {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.amount {
+  font-weight: bold;
+  color: #0f172a;
+}
+
+/* Badge de Estado */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.status-paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-expired {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+/* Botón Pagar */
+.pay-btn {
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.pay-btn:hover {
+  background: #16a34a;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+  font-style: italic;
+}

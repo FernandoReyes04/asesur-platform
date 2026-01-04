@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo } from 'react'
+import '../styles/NotificationsView.css' // <--- IMPORTAMOS CSS
 
 export default function NotificationsView() {
-  const [allReceipts, setAllReceipts] = useState([]) // Todos los datos crudos
-  const [filteredReceipts, setFilteredReceipts] = useState([]) // Datos filtrados para mostrar
+  const [allReceipts, setAllReceipts] = useState([])
+  const [filteredReceipts, setFilteredReceipts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // --- ESTADOS DE FILTROS ---
+  // --- FILTROS ---
   const [filterDate, setFilterDate] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('Todos')
@@ -14,8 +15,6 @@ export default function NotificationsView() {
     fetch('http://localhost:3000/api/notificaciones')
       .then(res => res.json())
       .then(result => {
-        // 1. Unificamos Vencidos y Próximos en una sola lista maestra
-        // Agregamos una etiqueta 'status' para poder filtrar
         const overdue = (result.overdue || []).map(i => ({ ...i, status: 'Vencido' }))
         const upcoming = (result.upcoming || []).map(i => ({ ...i, status: 'Por Vencer' }))
         
@@ -31,16 +30,14 @@ export default function NotificationsView() {
       })
   }, [])
 
-  // --- LÓGICA DE FILTRADO ---
+  // --- FILTRADO ---
   const handleFilter = () => {
     let result = allReceipts
 
-    // 1. Filtro por Fecha Exacta
     if (filterDate) {
         result = result.filter(item => item.recibo_inicio === filterDate)
     }
 
-    // 2. Búsqueda por Póliza o Cliente
     if (searchTerm) {
         const term = searchTerm.toLowerCase()
         result = result.filter(item => 
@@ -51,7 +48,6 @@ export default function NotificationsView() {
         )
     }
 
-    // 3. Filtro por Estatus
     if (filterStatus !== 'Todos') {
         result = result.filter(item => item.status === filterStatus)
     }
@@ -66,7 +62,7 @@ export default function NotificationsView() {
       setFilteredReceipts(allReceipts)
   }
 
-  // --- LÓGICA PARA LA LÍNEA DE TIEMPO (Agrupar por fecha) ---
+  // --- TIMELINE ---
   const timelineData = useMemo(() => {
       const groups = {}
       filteredReceipts.forEach(item => {
@@ -74,7 +70,6 @@ export default function NotificationsView() {
           if(!groups[date]) groups[date] = 0
           groups[date]++
       })
-      // Tomamos las primeras 4 fechas únicas para mostrar en el timeline
       return Object.keys(groups).sort().slice(0, 4).map(date => ({
           date,
           count: groups[date]
@@ -83,85 +78,66 @@ export default function NotificationsView() {
 
   const money = (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val)
 
-  // --- ESTILOS ---
-  const containerStyle = { maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif', color:'#334155' }
-  const cardStyle = { background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom:'30px' }
-  const labelStyle = { display:'block', fontSize:'12px', fontWeight:'bold', marginBottom:'5px', color:'#64748b' }
-  const inputStyle = { width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #e2e8f0', fontSize:'14px' }
-  const btnStyle = { padding:'10px 20px', borderRadius:'6px', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'13px' }
-
-  if (loading) return <div style={{padding:'40px', color:'#64748b'}}>Cargando tablero...</div>
+  if (loading) return <div className="loading-container">Cargando tablero...</div>
 
   return (
-    <div style={containerStyle}>
+    <div className="notifications-container">
       
-      <h2 style={{color:'#0f172a', marginBottom:'20px'}}>Tablero de Control de Recibos</h2>
+      <h2 className="page-title">Tablero de Control de Recibos</h2>
 
-      {/* 1. SECCIÓN DE FILTROS */}
-      <div style={cardStyle}>
-          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'20px', alignItems:'end'}}>
+      {/* 1. FILTROS */}
+      <div className="filters-card">
+          <div className="filters-grid">
               
               <div>
-                  <label style={labelStyle}>Fecha de cobro</label>
-                  <input type="date" value={filterDate} onChange={(e)=>setFilterDate(e.target.value)} style={inputStyle} />
+                  <label className="filter-label">Fecha de cobro</label>
+                  <input type="date" value={filterDate} onChange={(e)=>setFilterDate(e.target.value)} className="filter-input" />
               </div>
 
               <div>
-                  <label style={labelStyle}>Buscar póliza o cliente</label>
-                  <input type="text" placeholder="Ej. 15025..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} style={inputStyle} />
+                  <label className="filter-label">Buscar póliza o cliente</label>
+                  <input type="text" placeholder="Ej. 15025..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="filter-input" />
               </div>
 
               <div>
-                  <label style={labelStyle}>Buscar por estatus</label>
-                  <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} style={inputStyle}>
+                  <label className="filter-label">Buscar por estatus</label>
+                  <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} className="filter-input">
                       <option>Todos</option>
                       <option>Vencido</option>
                       <option>Por Vencer</option>
                   </select>
               </div>
 
-              <div style={{display:'flex', gap:'10px'}}>
-                  <button onClick={handleFilter} style={{...btnStyle, background:'#000080', color:'white'}}>BUSCAR</button>
-                  <button onClick={clearFilters} style={{...btnStyle, background:'transparent', color:'#000080', display:'flex', alignItems:'center', gap:'5px'}}>
+              <div className="filter-buttons">
+                  <button onClick={handleFilter} className="btn-filter btn-search">BUSCAR</button>
+                  <button onClick={clearFilters} className="btn-filter btn-clear">
                       ✕ LIMPIAR FILTROS
                   </button>
               </div>
           </div>
       </div>
 
-      {/* 2. LÍNEA DE TIEMPO (TIMELINE) */}
-      <div style={{marginBottom:'30px'}}>
-          <h3 style={{color:'#475569', marginBottom:'15px'}}>Calendario de recibos próximos a vencer</h3>
+      {/* 2. TIMELINE */}
+      <div className="timeline-section">
+          <h3 className="section-title">Calendario de recibos próximos a vencer</h3>
           
           {timelineData.length === 0 ? (
-              <p style={{color:'#94a3b8', fontStyle:'italic'}}>No hay datos para mostrar en la línea de tiempo.</p>
+              <p className="empty-timeline">No hay datos para mostrar en la línea de tiempo.</p>
           ) : (
-            <div style={{position:'relative', padding:'40px 0'}}>
-                {/* La línea gris de fondo */}
-                <div style={{position:'absolute', top:'50%', left:'5%', right:'5%', height:'8px', background:'#e2e8f0', borderRadius:'4px', zIndex:0}}></div>
+            <div className="timeline-container">
+                <div className="timeline-line"></div>
                 
-                <div style={{display:'flex', justifyContent:'space-between', position:'relative', zIndex:1, padding:'0 5%'}}>
+                <div className="timeline-items">
                     {timelineData.map((item, index) => {
-                        // Colores alternados para los puntos estilo pastel
                         const colors = ['#fca5a5', '#fde047', '#86efac', '#a5b4fc']
                         const color = colors[index % colors.length]
                         
                         return (
-                            <div key={index} style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-                                <div style={{fontSize:'12px', fontWeight:'bold', color:'#334155', marginBottom:'5px'}}>
-                                    {item.date}
-                                </div>
-                                <div style={{fontSize:'10px', color:'#64748b', marginBottom:'10px'}}>
-                                    ({item.count} recibos)
-                                </div>
-                                {/* El Pin/Punto */}
-                                <div style={{
-                                    width:'20px', height:'20px', background:color, borderRadius:'50%', 
-                                    border:'4px solid white', boxShadow:'0 2px 5px rgba(0,0,0,0.1)'
-                                }}></div>
-                                <div style={{fontSize:'10px', color:'#64748b', marginTop:'10px'}}>
-                                    Vencen {item.count} pólizas
-                                </div>
+                            <div key={index} className="timeline-item">
+                                <div className="timeline-date">{item.date}</div>
+                                <div className="timeline-count-label">({item.count} recibos)</div>
+                                <div className="timeline-dot" style={{ background: color }}></div>
+                                <div className="timeline-footer">Vencen {item.count} pólizas</div>
                             </div>
                         )
                     })}
@@ -170,51 +146,41 @@ export default function NotificationsView() {
           )}
       </div>
 
-      {/* 3. TABLA DE DETALLES */}
+      {/* 3. TABLA */}
       <div>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-              <h3 style={{margin:0, color:'#0f172a'}}>Detalle de Recibos</h3>
+          <div className="table-header-row">
+              <h3 className="section-title" style={{margin:0, color:'#0f172a'}}>Detalle de Recibos</h3>
           </div>
 
-          <div style={{background:'white', borderRadius:'12px', overflow:'hidden', boxShadow:'0 4px 6px rgba(0,0,0,0.05)'}}>
-              <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
+          <div className="details-card">
+              <table className="receipts-table">
                   <thead>
-                      <tr style={{background:'#1e1b4b', color:'white', textAlign:'left'}}>
-                          <th style={{padding:'15px'}}>Póliza</th>
-                          <th style={{padding:'15px'}}>Aseguradora</th>
-                          <th style={{padding:'15px'}}>Cliente</th>
-                          <th style={{padding:'15px'}}>Teléfono</th>
-                          <th style={{padding:'15px'}}>Fecha de Cobro</th>
-                          <th style={{padding:'15px'}}>Monto</th>
-                          <th style={{padding:'15px'}}>Estatus</th>
+                      <tr>
+                          <th>Póliza</th>
+                          <th>Aseguradora</th>
+                          <th>Cliente</th>
+                          <th>Teléfono</th>
+                          <th>Fecha de Cobro</th>
+                          <th>Monto</th>
+                          <th>Estatus</th>
                       </tr>
                   </thead>
                   <tbody>
                       {filteredReceipts.length === 0 ? (
-                          <tr><td colSpan="7" style={{padding:'30px', textAlign:'center', color:'#94a3b8'}}>No se encontraron recibos con los filtros actuales.</td></tr>
+                          <tr><td colSpan="7" className="empty-message">No se encontraron recibos con los filtros actuales.</td></tr>
                       ) : (
                           filteredReceipts.map((item, i) => (
-                              <tr key={i} style={{borderBottom:'1px solid #f1f5f9', background: i%2===0 ? 'white' : '#f8fafc'}}>
-                                  <td style={{padding:'15px', fontWeight:'bold', color:'#334155'}}>{item.numero_poliza}</td>
-                                  <td style={{padding:'15px'}}>{item.aseguradora}</td>
-                                  <td style={{padding:'15px', textTransform:'uppercase'}}>
+                              <tr key={i}>
+                                  <td className="policy-cell">{item.numero_poliza}</td>
+                                  <td>{item.aseguradora}</td>
+                                  <td className="client-cell">
                                       {item.clientes?.nombre} {item.clientes?.apellido}
                                   </td>
-                                  <td style={{padding:'15px'}}>{item.clientes?.telefono || '-'}</td>
-                                  <td style={{padding:'15px'}}>{item.recibo_inicio}</td>
-                                  <td style={{padding:'15px', fontWeight:'bold'}}>{money(item.prima_total)}</td>
-                                  <td style={{padding:'15px'}}>
-                                      <span style={{
-                                          background: item.status === 'Vencido' ? '#ef4444' : '#f59e0b',
-                                          color: 'white',
-                                          padding: '4px 10px',
-                                          borderRadius: '6px',
-                                          fontWeight: 'bold',
-                                          fontSize: '11px',
-                                          display: 'inline-block',
-                                          textAlign: 'center',
-                                          width: '90px'
-                                      }}>
+                                  <td>{item.clientes?.telefono || '-'}</td>
+                                  <td>{item.recibo_inicio}</td>
+                                  <td className="amount-cell">{money(item.prima_total)}</td>
+                                  <td>
+                                      <span className={`status-badge ${item.status === 'Vencido' ? 'status-expired' : 'status-warning'}`}>
                                           {item.status === 'Vencido' ? 'VENCIDO' : 'POR VENCER'}
                                       </span>
                                   </td>

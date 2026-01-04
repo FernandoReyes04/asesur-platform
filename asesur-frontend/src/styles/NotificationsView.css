@@ -1,0 +1,229 @@
+/* src/styles/NotificationsView.css */
+
+.notifications-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-title {
+  color: #0f172a;
+  margin-bottom: 20px;
+}
+
+/* --- FILTROS --- */
+.filters-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  margin-bottom: 30px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  align-items: end;
+}
+
+.filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #64748b;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  box-sizing: border-box; /* Importante para que el padding no rompa el grid */
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-filter {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+  transition: opacity 0.2s;
+}
+
+.btn-search {
+  background: #000080;
+  color: white;
+}
+
+.btn-clear {
+  background: transparent;
+  color: #000080;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
+}
+
+.btn-clear:hover {
+  background: #f1f5f9;
+}
+
+/* --- TIMELINE --- */
+.timeline-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  color: #475569;
+  margin-bottom: 15px;
+}
+
+.empty-timeline {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.timeline-container {
+  position: relative;
+  padding: 40px 0;
+}
+
+.timeline-line {
+  position: absolute;
+  top: 50%;
+  left: 5%;
+  right: 5%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  z-index: 0;
+}
+
+.timeline-items {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  padding: 0 5%;
+}
+
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timeline-date {
+  font-size: 12px;
+  font-weight: bold;
+  color: #334155;
+  margin-bottom: 5px;
+}
+
+.timeline-count-label {
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.timeline-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-footer {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* --- TABLA DE DETALLES --- */
+.table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.details-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.receipts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.receipts-table th {
+  background: #1e1b4b;
+  color: white;
+  text-align: left;
+  padding: 15px;
+}
+
+.receipts-table td {
+  padding: 15px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.receipts-table tr:nth-child(even) {
+  background: #f8fafc; /* Alternar filas */
+}
+
+.policy-cell {
+  font-weight: bold;
+  color: #334155;
+}
+
+.client-cell {
+  text-transform: uppercase;
+}
+
+.amount-cell {
+  font-weight: bold;
+}
+
+/* Badges de estatus */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 11px;
+  display: inline-block;
+  text-align: center;
+  width: 90px;
+  color: white;
+}
+
+.status-expired {
+  background: #ef4444;
+}
+
+.status-warning {
+  background: #f59e0b;
+}
+
+.empty-message {
+  padding: 30px;
+  text-align: center;
+  color: #94a3b8;
+  font-style: italic;
+}

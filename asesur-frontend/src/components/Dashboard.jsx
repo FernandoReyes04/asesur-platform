@@ -5,11 +5,14 @@ import PolicyForm from './PolicyForm'
 import PolicyList from './PolicyList'
 import RecordsView from './RecordsView' 
 import MetricsView from './MetricsView'
-import HistoryMetricsView from './HistoryMetricsView' // <--- IMPORTACIÓN NUEVA (PASO 3)
+import HistoryMetricsView from './HistoryMetricsView' 
 import NotificationsView from './NotificationsView'
 import DashboardHome from './DashboardHome'
 import ProfileModal from './ProfileModal'
 import RenewalsView from './RenewalsView'
+
+// IMPORTAMOS LOS ESTILOS
+import '../styles/Dashboard.css'
 
 export default function Dashboard({ user, onLogout }) {
   // Estados de Vista
@@ -17,17 +20,17 @@ export default function Dashboard({ user, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   
-  // --- ESTADOS DE MENÚS DESPLEGABLES ---
+  // Estados de Menús Desplegables
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [showPoliciesMenu, setShowPoliciesMenu] = useState(false) 
 
-  // Estado para Datos del Perfil
+  // Estado Perfil
   const [profileData, setProfileData] = useState({
     nombre: localStorage.getItem('asesur_user_name') || 'Usuario',
     avatar_url: null
   })
 
-  // --- CARGAR PERFIL ---
+  // Cargar Perfil
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user || !user.id) return
@@ -62,37 +65,37 @@ export default function Dashboard({ user, onLogout }) {
       if(newData.nombre) localStorage.setItem('asesur_user_name', newData.nombre)
   }
 
-  // --- ESTILOS ---
-  const btnStyle = (viewName) => ({
-    display: 'flex', alignItems: 'center', gap: '15px', width: '100%', padding: '12px',
-    background: (currentView === viewName || (viewName === 'metricas' && currentView === 'history-metrics')) ? '#1e293b' : 'transparent',
-    border: 'none', color: (currentView === viewName || (viewName === 'metricas' && currentView === 'history-metrics')) ? '#38bdf8' : '#94a3b8',
-    cursor: 'pointer', fontSize: '15px', borderRadius: '6px', marginBottom: '5px',
-    textAlign: 'left'
-  })
+  // --- HELPER PARA CLASES ACTIVAS ---
+  // Esto reemplaza las funciones btnStyle y subBtnStyle
+  const getNavClass = (viewName) => {
+      return `nav-btn ${currentView === viewName ? 'active' : ''}`
+  }
+  
+  // Para los botones padres que se iluminan si un hijo está activo
+  const getParentNavClass = (isActiveCondition) => {
+      return `nav-btn nav-btn-dropdown ${isActiveCondition ? 'active' : ''}`
+  }
 
-  const subBtnStyle = (viewName) => ({
-    ...btnStyle(viewName),
-    paddingLeft: '45px', 
-    fontSize: '13px',
-    color: currentView === viewName ? '#38bdf8' : '#cbd5e1'
-  })
+  const getSubNavClass = (viewName) => {
+      return `nav-btn sub-nav-btn ${currentView === viewName ? 'active' : ''}`
+  }
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%', backgroundColor: '#f1f5f9', position: 'relative' }}>
+    <div className="dashboard-container">
       
       {/* SIDEBAR */}
-      <aside style={{ width: isSidebarOpen ? '260px' : '80px', background: '#0f172a', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'all 0.3s', overflowY: 'auto' }}>
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div>
-           <h2 onClick={()=>setIsSidebarOpen(!isSidebarOpen)} style={{cursor:'pointer', color:'#38bdf8', whiteSpace: 'nowrap', overflow: 'hidden'}}>
+           <h2 onClick={()=>setIsSidebarOpen(!isSidebarOpen)} className="sidebar-header">
              {isSidebarOpen ? 'ASESUR 🛡️' : '🛡️'}
            </h2>
            
-           <nav style={{marginTop:'30px'}}>
-             <button onClick={() => setCurrentView('home')} style={btnStyle('home')}>
+           <nav className="nav-menu">
+             <button onClick={() => setCurrentView('home')} className={getNavClass('home')}>
                <span>📊</span> {isSidebarOpen && <span>Panel General</span>}
              </button>
-             <button onClick={() => setCurrentView('register')} style={btnStyle('register')}>
+             
+             <button onClick={() => setCurrentView('register')} className={getNavClass('register')}>
                <span>👥</span> {isSidebarOpen && <span>Clientes</span>}
              </button>
 
@@ -102,34 +105,32 @@ export default function Dashboard({ user, onLogout }) {
                     if(!isSidebarOpen) setIsSidebarOpen(true);
                     setShowPoliciesMenu(!showPoliciesMenu);
                 }} 
-                style={{
-                    ...btnStyle('polizas'), 
-                    justifyContent: 'space-between', 
-                    background: (currentView === 'polizas-nueva' || currentView === 'polizas-cartera') ? '#1e293b' : 'transparent'
-                }}
+                className={getParentNavClass(currentView === 'polizas-nueva' || currentView === 'polizas-cartera')}
              >
-               <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
+               <div className="nav-icon-container">
                    <span>📄</span> 
                    {isSidebarOpen && <span>Gestión de Pólizas</span>}
                </div>
-               {isSidebarOpen && <span style={{fontSize:'10px'}}>{showPoliciesMenu ? '▼' : '▶'}</span>}
+               {isSidebarOpen && <span className="arrow-icon">{showPoliciesMenu ? '▼' : '▶'}</span>}
              </button>
 
              {isSidebarOpen && showPoliciesMenu && (
-                 <div style={{background: '#0f172a', marginBottom: '5px', borderRadius: '0 0 6px 6px'}}>
-                     <button onClick={() => setCurrentView('polizas-nueva')} style={subBtnStyle('polizas-nueva')}>
+                 <div className="submenu-container">
+                     <button onClick={() => setCurrentView('polizas-nueva')} className={getSubNavClass('polizas-nueva')}>
                         ➕ Nueva Póliza
                      </button>
-                     <button onClick={() => setCurrentView('polizas-cartera')} style={subBtnStyle('polizas-cartera')}>
+                     <button onClick={() => setCurrentView('polizas-cartera')} className={getSubNavClass('polizas-cartera')}>
                         📋 Cartera
                      </button>
                  </div>
              )}
 
-             <button onClick={() => setCurrentView('registros')} style={btnStyle('registros')}>
+             <button onClick={() => setCurrentView('registros')} className={getNavClass('registros')}>
                <span>📂</span> {isSidebarOpen && <span>Registros</span>}
              </button>
-             <button onClick={() => setCurrentView('metricas')} style={btnStyle('metricas')}>
+             
+             {/* Reportes y métricas (incluye la vista de historial como activa) */}
+             <button onClick={() => setCurrentView('metricas')} className={`nav-btn ${currentView === 'metricas' || currentView === 'history-metrics' ? 'active' : ''}`}>
                <span>📈</span> {isSidebarOpen && <span>Reportes</span>}
              </button>
 
@@ -139,25 +140,21 @@ export default function Dashboard({ user, onLogout }) {
                     if(!isSidebarOpen) setIsSidebarOpen(true); 
                     setShowAdminMenu(!showAdminMenu);
                 }} 
-                style={{
-                    ...btnStyle('admin'), 
-                    justifyContent: 'space-between', 
-                    background: (currentView === 'recibos' || currentView === 'renovaciones') ? '#1e293b' : 'transparent'
-                }}
+                className={getParentNavClass(currentView === 'recibos' || currentView === 'renovaciones')}
              >
-               <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
+               <div className="nav-icon-container">
                    <span>⚙️</span> 
                    {isSidebarOpen && <span>Administración</span>}
                </div>
-               {isSidebarOpen && <span style={{fontSize:'10px'}}>{showAdminMenu ? '▼' : '▶'}</span>}
+               {isSidebarOpen && <span className="arrow-icon">{showAdminMenu ? '▼' : '▶'}</span>}
              </button>
 
              {isSidebarOpen && showAdminMenu && (
-                 <div style={{background: '#0f172a', marginBottom: '5px', borderRadius: '0 0 6px 6px'}}>
-                     <button onClick={() => setCurrentView('recibos')} style={subBtnStyle('recibos')}>
+                 <div className="submenu-container">
+                     <button onClick={() => setCurrentView('recibos')} className={getSubNavClass('recibos')}>
                         🧾 Recibos (Cobranza)
                      </button>
-                     <button onClick={() => setCurrentView('renovaciones')} style={subBtnStyle('renovaciones')}>
+                     <button onClick={() => setCurrentView('renovaciones')} className={getSubNavClass('renovaciones')}>
                         🔄 Renovaciones
                      </button>
                  </div>
@@ -166,17 +163,17 @@ export default function Dashboard({ user, onLogout }) {
            </nav>
         </div>
         
-        <button onClick={handleLogoutClick} style={{background:'#dc2626', color:'white', border:'none', padding:'10px', borderRadius:'6px', cursor:'pointer', marginTop:'20px'}}>
+        <button onClick={handleLogoutClick} className="logout-btn">
           {isSidebarOpen ? 'Cerrar Sesión' : '🚪'}
         </button>
       </aside>
 
       {/* MAIN */}
-      <main style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
+      <main className="main-content">
         
-        <div style={{ marginBottom: '30px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div className="top-bar">
           <div>
-            <h1 style={{ margin: 0, color: '#0f172a' }}>
+            <h1 className="page-title">
               {/* TÍTULOS DINÁMICOS */}
               {currentView === 'home' ? 'Tablero de Control' : 
                currentView === 'register' ? 'Gestión de Clientes' : 
@@ -184,33 +181,24 @@ export default function Dashboard({ user, onLogout }) {
                currentView === 'polizas-cartera' ? 'Cartera de Pólizas' :
                currentView === 'registros' ? 'Consulta de Registros' :
                currentView === 'metricas' ? 'Reportes Financieros' : 
-               currentView === 'history-metrics' ? 'Análisis Histórico' : // <--- NUEVO TÍTULO
+               currentView === 'history-metrics' ? 'Análisis Histórico' :
                currentView === 'recibos' ? 'Gestión de Recibos y Cobranza' :
                currentView === 'renovaciones' ? 'Gestión de Renovaciones' : 'Panel'}
             </h1>
-            <p style={{margin:0, fontSize:'13px', color:'#64748b'}}>Sistema Integral de Gestión Asesur</p>
+            <p className="page-subtitle">Sistema Integral de Gestión Asesur</p>
           </div>
           
           <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-            <div 
-                onClick={() => setIsProfileOpen(true)}
+            <div onClick={() => setIsProfileOpen(true)} className="profile-widget">
+              <div 
+                className="avatar-circle"
                 style={{
-                    padding:'5px 12px 5px 5px', background:'white', borderRadius:'30px', 
-                    display:'flex', alignItems:'center', gap:'10px',
-                    border:'1px solid #e2e8f0', cursor:'pointer',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.05)', transition: 'transform 0.1s'
+                    backgroundImage: profileData.avatar_url ? `url(${profileData.avatar_url})` : 'none',
                 }}
-                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <div style={{
-                  width:'32px', height:'32px', borderRadius:'50%', 
-                  background: profileData.avatar_url ? `url(${profileData.avatar_url}) center/cover` : '#eff6ff',
-                  color:'#3b82f6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px'
-              }}>
+              >
                   {!profileData.avatar_url && '👤'}
               </div>
-              <span style={{fontSize:'13px', color:'#334155', fontWeight:'600'}}>
+              <span className="profile-name">
                 {profileData.nombre}
               </span>
             </div>
@@ -227,10 +215,8 @@ export default function Dashboard({ user, onLogout }) {
         ) : currentView === 'registros' ? (
             <RecordsView />
         ) : currentView === 'metricas' ? (
-            // PASO 3: Conectamos el botón para ir al historial
             <MetricsView onViewHistory={() => setCurrentView('history-metrics')} />
         ) : currentView === 'history-metrics' ? (
-            // PASO 3: Nueva vista con botón para volver
             <HistoryMetricsView onBack={() => setCurrentView('metricas')} />
         ) : currentView === 'recibos' ? (
             <NotificationsView user={user} />

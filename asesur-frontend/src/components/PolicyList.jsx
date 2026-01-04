@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
+import '../styles/PolicyList.css' // <--- IMPORTAMOS CSS
 
 export default function PolicyList() {
   const [policies, setPolicies] = useState([])
-  const [loading, setLoading] = useState(true) // Inicia cargando
+  const [loading, setLoading] = useState(true)
 
-  // 1. LÓGICA PURA DE DATOS (Sin tocar estados de loading aquí)
   const fetchPoliciesData = async () => {
     try {
         const res = await fetch('http://localhost:3000/api/polizas')
@@ -16,7 +16,6 @@ export default function PolicyList() {
     }
   }
 
-  // 2. EFECTO INICIAL (Solo monta y apaga el loading al final)
   useEffect(() => {
     fetchPoliciesData().then(data => {
         setPolicies(data)
@@ -24,7 +23,6 @@ export default function PolicyList() {
     })
   }, [])
 
-  // 3. FUNCIÓN PARA EL BOTÓN (Aquí sí activamos el loading manualmente)
   const handleRefresh = async () => {
     setLoading(true)
     const data = await fetchPoliciesData()
@@ -36,37 +34,41 @@ export default function PolicyList() {
       if(!confirm("¿Confirmar que esta póliza ha sido PAGADA?")) return
       try {
           await fetch(`http://localhost:3000/api/polizas/${id}/pagar`, { method: 'PUT' })
-          handleRefresh() // Recargamos usando la función del botón
+          handleRefresh() 
       } catch (error) { alert(error.message) }
   }
 
-  const getStatusStyle = (estado) => {
+  const getStatusClass = (estado) => {
       switch(estado) {
-          case 'pagado': return { bg: '#dcfce7', text: '#166534', label: 'PAGADO' }
-          case 'vencido': return { bg: '#fee2e2', text: '#991b1b', label: 'VENCIDO' }
-          default: return { bg: '#fef9c3', text: '#854d0e', label: 'PENDIENTE' }
+          case 'pagado': return 'status-badge status-paid'
+          case 'vencido': return 'status-badge status-expired'
+          default: return 'status-badge status-pending'
       }
   }
 
-  // ESTILOS
-  const cardStyle = { background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }
+  const getStatusLabel = (estado) => {
+      switch(estado) {
+          case 'pagado': return 'PAGADO'
+          case 'vencido': return 'VENCIDO'
+          default: return 'PENDIENTE'
+      }
+  }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <h2 style={{color:'#0f172a', marginBottom:'20px'}}>Cartera de Pólizas</h2>
+    <div className="policy-list-container">
+        <h2 className="page-title">Cartera de Pólizas</h2>
         
-        <div style={cardStyle}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-                <h3 style={{margin:0, color:'#0f172a'}}>Seguimiento de Recibos</h3>
-                {/* Usamos handleRefresh aquí */}
-                <button onClick={handleRefresh} style={{background:'transparent', border:'1px solid #cbd5e1', padding:'5px 10px', borderRadius:'4px', cursor:'pointer'}}>🔄 Actualizar</button>
+        <div className="list-card">
+            <div className="list-header">
+                <h3 className="card-title">Seguimiento de Recibos</h3>
+                <button onClick={handleRefresh} className="refresh-btn">🔄 Actualizar</button>
             </div>
             
-            {loading ? <p style={{color:'#64748b'}}>Cargando cartera...</p> : (
-                <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
+            {loading ? <p className="loading-text">Cargando cartera...</p> : (
+                <table className="policy-table">
                     <thead>
-                        <tr style={{textAlign:'left', color:'#64748b', borderBottom:'2px solid #f1f5f9'}}>
-                            <th style={{padding:'10px'}}>Cliente</th>
+                        <tr>
+                            <th>Cliente</th>
                             <th>Póliza</th>
                             <th>Vigencia Recibo</th>
                             <th>Monto</th>
@@ -75,42 +77,41 @@ export default function PolicyList() {
                         </tr>
                     </thead>
                     <tbody>
-                        {policies.length === 0 ? <tr><td colSpan="6" style={{textAlign:'center', padding:'20px', color:'#94a3b8'}}>No hay pólizas registradas.</td></tr> : 
-                        policies.map(p => {
-                            const statusStyle = getStatusStyle(p.estado)
-                            return (
-                                <tr key={p.id} style={{borderBottom:'1px solid #f1f5f9'}}>
-                                    <td style={{padding:'15px'}}>
-                                        <div style={{fontWeight:'bold'}}>{p.clientes?.nombre} {p.clientes?.apellido}</div>
-                                        <div style={{fontSize:'11px', color:'#64748b'}}>{p.clientes?.telefono || '-'}</div>
+                        {policies.length === 0 ? (
+                            <tr><td colSpan="6" className="empty-message">No hay pólizas registradas.</td></tr>
+                        ) : (
+                            policies.map(p => (
+                                <tr key={p.id}>
+                                    <td>
+                                        <div className="client-name">{p.clientes?.nombre} {p.clientes?.apellido}</div>
+                                        <div className="client-phone">{p.clientes?.telefono || '-'}</div>
                                     </td>
                                     <td>
-                                        <div style={{fontWeight:'bold', color:'#334155'}}>{p.aseguradora}</div>
-                                        <div style={{fontSize:'11px', color:'#64748b'}}>{p.numero_poliza}</div>
+                                        <div className="insurer-name">{p.aseguradora}</div>
+                                        <div className="policy-number">{p.numero_poliza}</div>
                                     </td>
                                     <td>
-                                        <div style={{color: p.estado === 'vencido' ? '#ef4444' : '#334155', fontWeight:'bold'}}>
+                                        <div className={`date-start ${p.estado === 'vencido' ? 'expired' : ''}`}>
                                             Del: {p.recibo_inicio}
                                         </div>
-                                        <div style={{fontSize:'11px', color:'#94a3b8'}}>Al: {p.recibo_fin}</div>
+                                        <div className="date-end">Al: {p.recibo_fin}</div>
                                     </td>
-                                    <td style={{fontWeight:'bold'}}>${p.prima_total}</td>
+                                    <td className="amount">${p.prima_total}</td>
                                     <td>
-                                        <span style={{background: statusStyle.bg, color: statusStyle.text, padding:'4px 10px', borderRadius:'12px', fontSize:'10px', fontWeight:'bold', textTransform:'uppercase'}}>
-                                            {statusStyle.label}
+                                        <span className={getStatusClass(p.estado)}>
+                                            {getStatusLabel(p.estado)}
                                         </span>
                                     </td>
                                     <td>
                                         {p.estado !== 'pagado' && (
-                                            <button onClick={()=>markAsPaid(p.id)} style={{background:'#22c55e', color:'white', border:'none', padding:'6px 12px', borderRadius:'6px', cursor:'pointer', fontSize:'11px', fontWeight:'bold'}}>
+                                            <button onClick={()=>markAsPaid(p.id)} className="pay-btn">
                                                 $$ PAGAR
                                             </button>
                                         )}
                                     </td>
                                 </tr>
-                            )
-                        })
-                        }
+                            ))
+                        )}
                     </tbody>
                 </table>
             )}

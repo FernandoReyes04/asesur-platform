@@ -1,0 +1,199 @@
+/* src/styles/Dashboard.css */
+
+.dashboard-container {
+  display: flex;
+  width: 100%;
+  height: 100vh; /* Asegura que ocupe toda la altura */
+  background-color: #f1f5f9;
+  position: relative;
+  overflow: hidden; /* Evita scroll doble */
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+  background: #0f172a;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: width 0.3s ease;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.sidebar.open {
+  width: 260px;
+}
+
+.sidebar.closed {
+  width: 80px;
+}
+
+.sidebar-header {
+  cursor: pointer;
+  color: #38bdf8;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+/* --- BOTONES DE NAVEGACIÓN --- */
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 15px;
+  border-radius: 6px;
+  text-align: left;
+  transition: all 0.2s;
+  white-space: nowrap; /* Evita que el texto se rompa al cerrar sidebar */
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+}
+
+.nav-btn.active {
+  background: #1e293b;
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+/* Botón con flecha (desplegable) */
+.nav-btn-dropdown {
+  justify-content: space-between;
+}
+
+.nav-icon-container {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.arrow-icon {
+  font-size: 10px;
+}
+
+/* --- SUBMENÚS --- */
+.submenu-container {
+  background: #0f172a; /* Mismo fondo para continuidad o #162032 para contraste */
+  margin-bottom: 5px;
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+.sub-nav-btn {
+  padding-left: 48px; /* Sangría */
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- BOTÓN CERRAR SESIÓN --- */
+.logout-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+  font-weight: bold;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.logout-btn:hover {
+  background: #b91c1c;
+}
+
+/* --- MAIN CONTENT --- */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.top-bar {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.8rem;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* --- PERFIL WIDGET --- */
+.profile-widget {
+  padding: 5px 12px 5px 5px;
+  background: white;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.profile-widget:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-widget:active {
+  transform: scale(0.97);
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #eff6ff;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background-position: center;
+  background-size: cover;
+}
+
+.profile-name {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+}

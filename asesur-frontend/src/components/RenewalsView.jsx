@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo } from 'react'
+import '../styles/RenewalsView.css' // <--- IMPORTAMOS CSS
 
 export default function RenewalsView() {
   const [allRenewals, setAllRenewals] = useState([])
   const [filteredRenewals, setFilteredRenewals] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // --- NUEVO ESTADO: CONTROL DEL PANEL LATERAL ---
+  // --- ESTADO PANEL LATERAL ---
   const [showPanel, setShowPanel] = useState(true)
 
   // --- FILTROS ---
@@ -32,7 +33,7 @@ export default function RenewalsView() {
       })
   }, [])
 
-  // --- NUEVO: CÁLCULO DE ESTADÍSTICAS PARA EL PANEL ---
+  // --- CÁLCULO ESTADÍSTICAS ---
   const renewalStats = useMemo(() => {
       const stats = { total60: 0, days7: 0, days15: 0, days30: 0, days60: 0, cancelled: 0 }
       const today = new Date();
@@ -54,7 +55,7 @@ export default function RenewalsView() {
       return stats;
   }, [allRenewals]);
 
-  // --- LÓGICA DE FILTRADO ---
+  // --- FILTRADO ---
   const handleFilter = () => {
     let result = allRenewals
 
@@ -82,7 +83,7 @@ export default function RenewalsView() {
       setFilteredRenewals(allRenewals)
   }
 
-  // --- LÓGICA TIMELINE ---
+  // --- TIMELINE ---
   const timelineData = useMemo(() => {
       const groups = {}
       filteredRenewals.forEach(item => {
@@ -95,91 +96,69 @@ export default function RenewalsView() {
       return Object.keys(groups).sort().slice(0, 4).map(date => ({ date, count: groups[date] }))
   }, [filteredRenewals])
 
-  // --- ESTILOS ---
-  const containerStyle = { maxWidth: '100%', margin: '0 auto', fontFamily: 'sans-serif', color:'#334155' }
-  const cardStyle = { background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom:'30px' }
-  const labelStyle = { display:'block', fontSize:'12px', fontWeight:'bold', marginBottom:'5px', color:'#64748b' }
-  const inputStyle = { width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #e2e8f0', fontSize:'14px', boxSizing: 'border-box' }
-  const btnStyle = { padding:'10px 20px', borderRadius:'6px', border:'none', cursor:'pointer', fontWeight:'bold', fontSize:'13px' }
-
-  // Estilos del Panel Lateral
-  const sidePanelStyle = {
-      width: '320px', background: 'white', padding: '25px', borderRadius: '12px', 
-      boxShadow: '0 4px 10px rgba(0,0,0,0.05)', marginLeft: '20px', height: 'fit-content',
-      transition: 'all 0.3s ease'
-  }
-  const iconCircle = (color) => ({
-      width: '35px', height: '35px', borderRadius: '50%', background: color, 
-      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '16px'
-  })
-  const statRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #f8fafc', paddingBottom: '10px' }
-
-  if (loading) return <div style={{padding:'40px', color:'#64748b'}}>Cargando renovaciones...</div>
+  if (loading) return <div className="loading-text">Cargando renovaciones...</div>
 
   return (
-    <div style={containerStyle}>
+    <div className="renewals-container">
       
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
-          <h2 style={{color:'#0f172a', margin:0}}>Tablero de Próximas Renovaciones</h2>
-          <button 
-            onClick={() => setShowPanel(!showPanel)}
-            style={{background:'white', border:'1px solid #cbd5e1', padding:'8px 15px', borderRadius:'6px', cursor:'pointer', color:'#64748b', fontSize:'12px', fontWeight:'bold'}}
-          >
-            {showPanel ? 'Ocultar Panel' : 'Ver panel'}
+      <div className="header-row">
+          <h2 className="page-title">Tablero de Próximas Renovaciones</h2>
+          <button onClick={() => setShowPanel(!showPanel)} className="toggle-panel-btn">
+            {showPanel ? 'Ocultar Panel →' : '← Ver Estadísticas'}
           </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'start' }}>
+      <div className="main-layout">
           
           {/* --- CONTENIDO PRINCIPAL (IZQUIERDA) --- */}
-          <div style={{ flex: 1 }}>
+          <div className="content-area">
               
               {/* 1. FILTROS */}
-              <div style={cardStyle}>
-                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'20px', alignItems:'end'}}>
+              <div className="filters-card">
+                  <div className="filters-grid">
                       <div>
-                          <label style={labelStyle}>Fecha fin de vigencia</label>
-                          <input type="date" value={filterDate} onChange={(e)=>setFilterDate(e.target.value)} style={inputStyle} />
+                          <label className="filter-label">Fecha fin de vigencia</label>
+                          <input type="date" value={filterDate} onChange={(e)=>setFilterDate(e.target.value)} className="filter-input" />
                       </div>
                       <div>
-                          <label style={labelStyle}>Buscar póliza o cliente</label>
-                          <input type="text" placeholder="Ej. Juan Pérez..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} style={inputStyle} />
+                          <label className="filter-label">Buscar póliza o cliente</label>
+                          <input type="text" placeholder="Ej. Juan Pérez..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="filter-input" />
                       </div>
                       <div>
-                          <label style={labelStyle}>Estatus</label>
-                          <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} style={inputStyle}>
+                          <label className="filter-label">Estatus</label>
+                          <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} className="filter-input">
                               <option>Todos</option>
                               <option>Por Renovar</option>
                               <option>Vencida</option>
                           </select>
                       </div>
-                      <div style={{display:'flex', gap:'10px'}}>
-                          <button onClick={handleFilter} style={{...btnStyle, background:'#000080', color:'white'}}>BUSCAR</button>
-                          <button onClick={clearFilters} style={{...btnStyle, background:'transparent', color:'#000080', display:'flex', alignItems:'center', gap:'5px'}}>
-                              ✕ LIMPIAR FILTROS
+                      <div className="filter-actions">
+                          <button onClick={handleFilter} className="btn-search">BUSCAR</button>
+                          <button onClick={clearFilters} className="btn-clear">
+                              ✕ LIMPIAR
                           </button>
                       </div>
                   </div>
               </div>
 
               {/* 2. TIMELINE */}
-              <div style={{marginBottom:'30px'}}>
-                  <h3 style={{color:'#475569', marginBottom:'15px'}}>Calendario de pólizas próximas a renovar</h3>
+              <div className="timeline-section">
+                  <h3 className="section-title">Calendario de pólizas próximas a renovar</h3>
                   {timelineData.length === 0 ? (
-                      <p style={{color:'#94a3b8', fontStyle:'italic'}}>No hay renovaciones programadas para las próximas fechas.</p>
+                      <p className="empty-timeline">No hay renovaciones programadas para las próximas fechas.</p>
                   ) : (
-                    <div style={{position:'relative', padding:'40px 0'}}>
-                        <div style={{position:'absolute', top:'50%', left:'5%', right:'5%', height:'8px', background:'#e2e8f0', borderRadius:'4px', zIndex:0}}></div>
-                        <div style={{display:'flex', justifyContent:'space-between', position:'relative', zIndex:1, padding:'0 5%'}}>
+                    <div className="timeline-container">
+                        <div className="timeline-track"></div>
+                        <div className="timeline-points">
                             {timelineData.map((item, index) => {
                                 const colors = ['#f472b6', '#fbbf24', '#34d399', '#818cf8']
                                 const color = colors[index % colors.length]
                                 return (
-                                    <div key={index} style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-                                        <div style={{fontSize:'12px', fontWeight:'bold', color:'#334155', marginBottom:'5px'}}>{item.date}</div>
-                                        <div style={{fontSize:'10px', color:'#64748b', marginBottom:'10px'}}>(Vencen vigencia)</div>
-                                        <div style={{width:'24px', height:'24px', background:color, borderRadius:'50%', border:'4px solid white', boxShadow:'0 2px 5px rgba(0,0,0,0.1)'}}></div>
-                                        <div style={{fontSize:'10px', color:'#64748b', marginTop:'10px', fontWeight:'bold'}}>{item.count} pólizas</div>
+                                    <div key={index} className="timeline-point">
+                                        <div className="point-date">{item.date}</div>
+                                        <div className="point-label">(Vence vigencia)</div>
+                                        <div className="point-marker" style={{ background: color }}></div>
+                                        <div className="point-count">{item.count} pólizas</div>
                                     </div>
                                 )
                             })}
@@ -190,42 +169,37 @@ export default function RenewalsView() {
 
               {/* 3. TABLA DETALLE */}
               <div>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-                      <h3 style={{margin:0, color:'#0f172a'}}>Detalle de Pólizas</h3>
+                  <div className="table-header">
+                      <h3 className="section-title" style={{margin:0}}>Detalle de Pólizas</h3>
                   </div>
-                  <div style={{background:'white', borderRadius:'12px', overflow:'hidden', boxShadow:'0 4px 6px rgba(0,0,0,0.05)'}}>
-                      <table style={{width:'100%', borderCollapse:'collapse', fontSize:'13px'}}>
+                  <div className="table-card">
+                      <table className="renewals-table">
                           <thead>
-                              <tr style={{background:'#1e1b4b', color:'white', textAlign:'left'}}>
-                                  <th style={{padding:'15px'}}>Póliza</th>
-                                  <th style={{padding:'15px'}}>Aseguradora</th>
-                                  <th style={{padding:'15px'}}>Asegurado / Contratante</th>
-                                  <th style={{padding:'15px'}}>Contacto</th>
-                                  <th style={{padding:'15px'}}>Fecha Fin Vigencia</th>
-                                  <th style={{padding:'15px'}}>Estatus</th>
+                              <tr>
+                                  <th>Póliza</th>
+                                  <th>Aseguradora</th>
+                                  <th>Asegurado / Contratante</th>
+                                  <th>Contacto</th>
+                                  <th>Fecha Fin Vigencia</th>
+                                  <th>Estatus</th>
                               </tr>
                           </thead>
                           <tbody>
                               {filteredRenewals.length === 0 ? (
-                                  <tr><td colSpan="6" style={{padding:'30px', textAlign:'center', color:'#94a3b8'}}>No se encontraron pólizas.</td></tr>
+                                  <tr><td colSpan="6" className="empty-table">No se encontraron pólizas.</td></tr>
                               ) : (
                                   filteredRenewals.map((item, i) => (
-                                      <tr key={i} style={{borderBottom:'1px solid #f1f5f9', background: i%2===0 ? 'white' : '#f8fafc'}}>
-                                          <td style={{padding:'15px', fontWeight:'bold', color:'#334155'}}>{item.numero_poliza}</td>
-                                          <td style={{padding:'15px'}}>{item.aseguradora}</td>
-                                          <td style={{padding:'15px', textTransform:'uppercase'}}>{item.clientes?.nombre} {item.clientes?.apellido}</td>
-                                          <td style={{padding:'15px'}}>
+                                      <tr key={i}>
+                                          <td className="td-policy">{item.numero_poliza}</td>
+                                          <td>{item.aseguradora}</td>
+                                          <td className="td-client">{item.clientes?.nombre} {item.clientes?.apellido}</td>
+                                          <td>
                                               <div>Tel: {item.clientes?.telefono || '-'}</div>
-                                              <div style={{fontSize:'11px', color:'#64748b'}}>{item.clientes?.email}</div>
+                                              <div className="td-contact-sub">{item.clientes?.email}</div>
                                           </td>
-                                          <td style={{padding:'15px', fontWeight:'bold'}}>{item.poliza_fin}</td>
-                                          <td style={{padding:'15px'}}>
-                                              <span style={{
-                                                  background: item.status === 'Vencida' ? '#fecaca' : '#fef08a',
-                                                  color: item.status === 'Vencida' ? '#991b1b' : '#854d0e',
-                                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '10px',
-                                                  display: 'inline-block', textAlign: 'center', width: '100px'
-                                              }}>
+                                          <td className="td-date">{item.poliza_fin}</td>
+                                          <td>
+                                              <span className={`status-badge ${item.status === 'Vencida' ? 'status-expired' : 'status-upcoming'}`}>
                                                   {item.status === 'Vencida' ? 'NO VIGENTE' : 'POR RENOVAR'}
                                               </span>
                                           </td>
@@ -240,42 +214,44 @@ export default function RenewalsView() {
 
           {/* --- PANEL LATERAL DERECHO (DESPLEGABLE) --- */}
           {showPanel && (
-              <div style={sidePanelStyle}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
-                      <h3 style={{margin:0, color:'#1e1b4b', fontSize:'16px'}}>Resumen</h3>
-                      <button onClick={()=>setShowPanel(false)} style={{border:'none', background:'transparent', color:'#94a3b8', cursor:'pointer'}}>✕</button>
+              <div className="side-panel">
+                  <div className="panel-header">
+                      <h3 className="panel-title">Resumen</h3>
+                      <button onClick={()=>setShowPanel(false)} className="close-panel-btn">✕</button>
                   </div>
 
                   {/* Resumen Total */}
-                  <div style={{background:'#f3f4f6', padding:'15px', borderRadius:'8px', display:'flex', alignItems:'center', gap:'15px', marginBottom:'30px'}}>
-                      <div style={{fontSize:'24px', fontWeight:'bold', color:'#1f2937'}}>{renewalStats.total60}</div>
-                      <div style={{fontSize:'11px', color:'#6b7280', lineHeight:'1.3'}}>
+                  <div className="summary-box">
+                      <div className="summary-number">{renewalStats.total60}</div>
+                      <div className="summary-text">
                           Pólizas por vencer en los siguientes 60 días.
                       </div>
                   </div>
 
-                  <h4 style={{fontSize:'13px', color:'#374151', marginBottom:'20px'}}>Pólizas por periodo</h4>
+                  <h4 className="panel-subtitle">Pólizas por periodo</h4>
 
-                  <div style={statRowStyle}>
-                      <div><div style={{fontSize:'13px', color:'#64748b'}}>Siguientes 7 días</div><div style={{fontSize:'20px', fontWeight:'bold', color:'#0f172a'}}>{renewalStats.days7}</div></div>
-                      <div style={iconCircle('#fbbf24')}>⚠️</div>
+                  <div className="stat-row">
+                      <div><div className="stat-label">Siguientes 7 días</div><div className="stat-value">{renewalStats.days7}</div></div>
+                      <div className="icon-circle" style={{background: '#fbbf24'}}>⚠️</div>
                   </div>
-                  <div style={statRowStyle}>
-                      <div><div style={{fontSize:'13px', color:'#64748b'}}>Siguientes 15 días</div><div style={{fontSize:'20px', fontWeight:'bold', color:'#0f172a'}}>{renewalStats.days15}</div></div>
-                      <div style={iconCircle('#f97316')}>📅</div>
+                  <div className="stat-row">
+                      <div><div className="stat-label">Siguientes 15 días</div><div className="stat-value">{renewalStats.days15}</div></div>
+                      <div className="icon-circle" style={{background: '#f97316'}}>📅</div>
                   </div>
-                  <div style={statRowStyle}>
-                      <div><div style={{fontSize:'13px', color:'#64748b'}}>Siguientes 30 días</div><div style={{fontSize:'20px', fontWeight:'bold', color:'#0f172a'}}>{renewalStats.days30}</div></div>
-                      <div style={iconCircle('#3b82f6')}>📅</div>
+                  <div className="stat-row">
+                      <div><div className="stat-label">Siguientes 30 días</div><div className="stat-value">{renewalStats.days30}</div></div>
+                      <div className="icon-circle" style={{background: '#3b82f6'}}>📅</div>
                   </div>
-                  <div style={statRowStyle}>
-                      <div><div style={{fontSize:'13px', color:'#64748b'}}>Siguientes 60 días</div><div style={{fontSize:'20px', fontWeight:'bold', color:'#0f172a'}}>{renewalStats.days60}</div></div>
-                      <div style={iconCircle('#1e1b4b')}>📅</div>
+                  <div className="stat-row">
+                      <div><div className="stat-label">Siguientes 60 días</div><div className="stat-value">{renewalStats.days60}</div></div>
+                      <div className="icon-circle" style={{background: '#1e1b4b'}}>📅</div>
                   </div>
-                  <div style={{...statRowStyle, borderBottom:'none'}}>
-                      <div><div style={{fontSize:'13px', color:'#64748b'}}>Canceladas</div><div style={{fontSize:'20px', fontWeight:'bold', color:'#0f172a'}}>{renewalStats.cancelled}</div></div>
-                      <div style={iconCircle('#be123c')}>🚫</div>
+                  <div className="stat-row last">
+                      <div><div className="stat-label">Canceladas</div><div className="stat-value">{renewalStats.cancelled}</div></div>
+                      <div className="icon-circle" style={{background: '#be123c'}}>🚫</div>
                   </div>
+
+                  <button className="download-btn">DESCARGAR PÓLIZAS ⬇</button>
               </div>
           )}
 

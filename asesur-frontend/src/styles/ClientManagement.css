@@ -1,0 +1,226 @@
+/* src/styles/ClientManagement.css */
+
+.client-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+/* --- FORMULARIO --- */
+.client-form-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.title-new {
+  color: #10b981;
+}
+
+.title-edit {
+  color: #f59e0b;
+}
+
+.cancel-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.cancel-btn:hover {
+  background: #f1f5f9;
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 2px;
+}
+
+.form-input {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  width: 100%;
+  font-size: 13px;
+  box-sizing: border-box; /* Importante */
+}
+
+.form-input-uppercase {
+  text-transform: uppercase;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Dropzone (Subida de archivos) */
+.dropzone {
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  padding: 15px;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.dropzone.active {
+  border: 2px solid #3b82f6;
+  background: #eff6ff;
+}
+
+.file-input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-icon {
+  font-size: 20px;
+}
+
+.upload-text {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.submit-btn {
+  padding: 10px;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.submit-btn.btn-create {
+  background: #0f172a;
+}
+
+.submit-btn.btn-create:hover {
+  background: #1e293b;
+}
+
+.submit-btn.btn-update {
+  background: #f59e0b;
+}
+
+.submit-btn.btn-update:hover {
+  background: #d97706;
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* --- LISTA DE CLIENTES --- */
+.client-list-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.search-input {
+  padding: 12px;
+  margin-bottom: 20px;
+  background: #f8fafc;
+}
+
+.client-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.client-table th {
+  background: #f1f5f9;
+  color: #475569;
+  text-align: left;
+  padding: 10px;
+}
+
+.client-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.client-name {
+  font-weight: 500;
+  color: #334155;
+}
+
+.client-type {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.client-phone {
+  font-size: 10px;
+  color: #3b82f6;
+}
+
+.client-rfc {
+  font-family: monospace;
+  color: #475569;
+}
+
+.edit-btn {
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #2563eb;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
