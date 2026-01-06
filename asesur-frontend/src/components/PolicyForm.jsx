@@ -7,13 +7,16 @@ export default function PolicyForm() {
   const [selectedClient, setSelectedClient] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  // URL DE PRODUCCIÓN
+  const API_URL = 'https://asesur-platform.onrender.com/api'
+
   const [policyData, setPolicyData] = useState({
     numero_poliza: '', 
     numero_recibo: '', 
     aseguradora: 'Banorte',
     tipo_poliza: 'Seguro de Vida',
     vendedor: 'Oficina',
-    estado: 'pendiente', // <--- NUEVO CAMPO DE ESTADO
+    estado: 'pendiente', 
     forma_pago: 'Anual', 
     prima_neta: '', 
     prima_total: '',
@@ -30,42 +33,84 @@ export default function PolicyForm() {
     if (isNaN(number)) return ''
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(number)
   }
-  const handleMoneyBlur = (e, field) => { setPolicyData({ ...policyData, [field]: formatCurrency(e.target.value) }) }
-  const handleMoneyFocus = (e, field) => { const val = e.target.value.replace(/[^0-9.]/g, ''); setPolicyData({ ...policyData, [field]: val }) }
+  
+  const handleMoneyBlur = (e, field) => { 
+      setPolicyData({ ...policyData, [field]: formatCurrency(e.target.value) }) 
+  }
+  
+  const handleMoneyFocus = (e, field) => { 
+      const val = e.target.value.replace(/[^0-9.]/g, ''); 
+      setPolicyData({ ...policyData, [field]: val }) 
+  }
 
   // --- API ---
   const handleSearch = async (term) => {
-    setSearchTerm(term); if (term.length < 3) return
-    try { const res = await fetch(`https://asesur-platform.onrender.com/api/clientes/search?q=${term}`); const data = await res.json(); setClientsList(data) } catch (e) { console.error(e) }
+    setSearchTerm(term); 
+    if (term.length < 3) return
+    try { 
+        // Usamos la constante API_URL para evitar errores de dedo
+        const res = await fetch(`${API_URL}/clientes/search?q=${term}`); 
+        const data = await res.json(); 
+        setClientsList(data) 
+    } catch (e) { console.error(e) }
   }
+
   const handleSelectClient = (c) => { setSelectedClient(c); setClientsList([]); setSearchTerm('') }
 
   // --- SUBMIT ---
   const handleSubmit = async (e) => {
-    e.preventDefault(); if (!selectedClient) return alert("Selecciona cliente")
+    e.preventDefault(); 
+    if (!selectedClient) return alert("Selecciona cliente")
+    
     setLoading(true)
     try {
-      const cleanPrimaNeta = parseFloat(policyData.prima_neta.toString().replace(/[^0-9.]/g, ''))
-      const cleanPrimaTotal = parseFloat(policyData.prima_total.toString().replace(/[^0-9.]/g, ''))
+      // Limpiamos los valores de moneda para enviar solo números
+      const cleanPrimaNeta = parseFloat(policyData.prima_neta.toString().replace(/[^0-9.]/g, '')) || 0
+      const cleanPrimaTotal = parseFloat(policyData.prima_total.toString().replace(/[^0-9.]/g, '')) || 0
       
-      const payload = { ...policyData, prima_neta: cleanPrimaNeta, prima_total: cleanPrimaTotal, cliente_id: selectedClient.id }
+      const payload = { 
+          ...policyData, 
+          // Al ser campos de texto en la BD, pasarán con guiones o barras sin problema
+          prima_neta: cleanPrimaNeta, 
+          prima_total: cleanPrimaTotal, 
+          cliente_id: selectedClient.id 
+      }
 
-      const res = await fetch('https://asesur-platform.onrender.com/api/polizas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      console.log("Enviando datos:", payload); 
+
+      const res = await fetch(`${API_URL}/polizas`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload)
       })
-      if (!res.ok) throw new Error("Error registrando")
+      
+      // 👇 IMPORTANTE: Leemos la respuesta del servidor antes de lanzar error
+      const responseData = await res.json();
+
+      if (!res.ok) {
+          // Si falla, mostramos el mensaje exacto que dio la base de datos
+          throw new Error(responseData.error || responseData.message || "Error desconocido al registrar")
+      }
       
       alert("✅ Póliza registrada correctamente"); 
+      
+      // Reiniciamos el formulario
       setPolicyData({ 
         numero_poliza:'', numero_recibo:'', aseguradora: 'Banorte', 
         tipo_poliza: 'Seguro de Vida', vendedor: 'Oficina',
-        estado: 'pendiente', // Reiniciar estado
+        estado: 'pendiente', 
         forma_pago: 'Anual', prima_neta:'', prima_total:'', 
         poliza_inicio:'', poliza_fin:'', recibo_inicio:'', recibo_fin:'' 
       })
       setSelectedClient(null)
       setSearchTerm('')
-    } catch (e) { alert(e.message) } finally { setLoading(false) }
+
+    } catch (e) { 
+        console.error("Error completo:", e);
+        alert("❌ Error: " + e.message) 
+    } finally { 
+        setLoading(false) 
+    }
   }
 
   return (
@@ -161,7 +206,15 @@ export default function PolicyForm() {
                     </div>
                     <div>
                         <label className="input-label">No. Póliza</label>
-                        <input className="form-input" type="text" required value={policyData.numero_poliza} onChange={e => setPolicyData({...policyData, numero_poliza:e.target.value})} />
+                        {/* Acepta texto libre (guiones, letras, números) */}
+                        <input 
+                            className="form-input" 
+                            type="text" 
+                            required 
+                            placeholder="Ej: I59-1-1-11490"
+                            value={policyData.numero_poliza} 
+                            onChange={e => setPolicyData({...policyData, numero_poliza:e.target.value})} 
+                        />
                     </div>
                 </div>
 
@@ -169,10 +222,17 @@ export default function PolicyForm() {
                  <div className="form-row">
                     <div>
                         <label className="input-label">No. Recibo</label>
-                        <input className="form-input" type="text" required value={policyData.numero_recibo} onChange={e => setPolicyData({...policyData, numero_recibo:e.target.value})} />
+                        {/* Acepta texto libre (barras, guiones) */}
+                        <input 
+                            className="form-input" 
+                            type="text" 
+                            required 
+                            placeholder="Ej: 1/4"
+                            value={policyData.numero_recibo} 
+                            onChange={e => setPolicyData({...policyData, numero_recibo:e.target.value})} 
+                        />
                     </div>
-                    {/* Espacio vacío para alinear si es necesario */}
-                     <div></div>
+                    <div></div>
                 </div>
 
                 {/* VIGENCIA PÓLIZA */}
