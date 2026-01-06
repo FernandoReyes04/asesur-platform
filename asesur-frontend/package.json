@@ -1,10 +1,11 @@
 {
-  "name": "fisio-cloud",
+  "name": "asesur-cloud",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "start": "node server.js",  
+    "dev": "node --watch server.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
