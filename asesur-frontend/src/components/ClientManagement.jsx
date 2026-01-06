@@ -33,7 +33,7 @@ export default function ClientManagement({ user }) {
   const fetchClients = async (term) => {
     try {
       const query = term || 'a'
-      const response = await fetch(`/api/clientes/search?q=${query}`)
+      const response = await fetch(`https://asesur-platform.onrender.com/api/clientes/search?q=${query}`)
       const data = await response.json()
       setClientsList(data)
     } catch (error) { console.error(error) }
@@ -91,7 +91,7 @@ export default function ClientManagement({ user }) {
       const payload = { ...formData, ine_url: publicUrl, agente_id: user.id || user.user?.id }
       delete payload.archivo; delete payload.ine_url_existente;
 
-      const url = selectedClient ? `/api/clientes/${selectedClient.id}` : '/api/clientes'
+      const url = selectedClient ? `https://asesur-platform.onrender.com/api/clientes/${selectedClient.id}` : 'https://asesur-platform.onrender.com/api/clientes'
       const method = selectedClient ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
