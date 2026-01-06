@@ -13,24 +13,22 @@ function App() {
   // VISTAS: 'login', 'verify_access', 'register'
   const [view, setView] = useState('login') 
 
-  // Datos para Registro
-  const [regData, setRegData] = useState({ email: '', password: '', nombre: '', adminCode: '', wantsAdmin: false })
+  // Datos para Registro (¡Simplificado! Ya no pedimos adminCode aquí)
+  const [regData, setRegData] = useState({ email: '', password: '', nombre: '' })
   const [regLoading, setRegLoading] = useState(false)
 
-  // ESTADO PARA EL CÓDIGO DE ACCESO
+  // ESTADO PARA EL CÓDIGO DE ACCESO (El muro de seguridad se mantiene)
   const [accessCode, setAccessCode] = useState('')
   const MASTER_KEY = 'Asesur2026' 
 
   // --- 1. EFECTO DE PERSISTENCIA BLINDADO ---
   useEffect(() => {
-    let mounted = true; // Evita actualizaciones si el componente se desmonta
+    let mounted = true; 
 
-    // Función segura para obtener sesión
     const getSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) throw error; // Si hay error, salta al catch
+        if (error) throw error; 
 
         if (mounted) {
           setUser(session?.user ?? null);
@@ -38,18 +36,15 @@ function App() {
         }
       } catch (error) {
         console.error("Error de sesión:", error.message);
-        // SI HAY UN ERROR CRÍTICO, FORZAMOS EL CIERRE PARA LIMPIAR EL TOKEN MALO
         if (mounted) {
           setUser(null);
           setLoading(false);
-          // Opcional: supabase.auth.signOut(); // Descomentar si el bucle persiste
         }
       }
     };
 
     getSession();
 
-    // Suscripción a cambios
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
         setUser(session?.user ?? null);
@@ -61,11 +56,11 @@ function App() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // <--- LOS CORCHETES VACÍOS SON LA CLAVE (Correcto)
+  }, []); 
 
   // --- LOGOUT ---
   const handleLogout = async () => {
-    setLoading(true); // Ponemos loading para evitar parpadeos
+    setLoading(true); 
     await supabase.auth.signOut();
     setUser(null);
     setView('login');
@@ -73,7 +68,7 @@ function App() {
     setLoading(false);
   }
 
-  // --- VERIFICAR ACCESO ---
+  // --- VERIFICAR ACCESO (El Muro) ---
   const handleVerifyAccess = (e) => {
     e.preventDefault()
     if (accessCode === MASTER_KEY) {
@@ -85,17 +80,21 @@ function App() {
     }
   }
 
-  // --- REGISTRO ---
+  // --- REGISTRO (Simplificado) ---
   const handleRegister = async (e) => {
     e.preventDefault(); 
     setRegLoading(true);
-    // ✅ CÓDIGO CORREGIDO (El que aceptará la base de datos)
-let rol = regData.wantsAdmin && regData.adminCode === MASTER_KEY ? 'admin' : 'user';
+    
+    // ⚠️ IMPORTANTE: Aquí enviamos 'Empleado/a' para cumplir con tu base de datos
+    // Si tuvieras que crear un Admin, lo harías manualmente desde la base de datos de Supabase
+    const rol = 'Empleado/a';
     
     try { 
       await authService.register(regData.email, regData.password, regData.nombre, rol); 
       alert("✅ Cuenta creada. Inicia sesión."); 
       setView('login'); 
+      // Limpiamos el formulario
+      setRegData({ email: '', password: '', nombre: '' });
     } catch (error) { 
       alert(error.message); 
     }
@@ -153,38 +152,44 @@ let rol = regData.wantsAdmin && regData.adminCode === MASTER_KEY ? 'admin' : 'us
       )
   }
 
-  // 4. VISTA DE REGISTRO 
+  // 4. VISTA DE REGISTRO (¡Ahora mucho más limpia!)
   if (view === 'register') {
     return (
       <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#003786'}}>
         <div style={{width:'100%', maxWidth:'400px', padding:'2rem', background:'white', borderRadius:'12px', textAlign:'center', boxShadow:'0 4px 15px rgba(0,0,0,0.1)'}}>
             <h1>Crear Cuenta</h1>
             <div style={{background:'#dcfce7', color:'#166534', padding:'5px', borderRadius:'4px', fontSize:'12px', marginBottom:'15px'}}>
-                ✅ Acceso Autorizado
+                ✅ Nuevo Empleado
             </div>
             
             <form onSubmit={handleRegister} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                <input placeholder="Nombre Completo" value={regData.nombre} onChange={e=>setRegData({...regData, nombre:e.target.value})} style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} required/>
-                <input type="email" placeholder="Email" value={regData.email} onChange={e=>setRegData({...regData, email:e.target.value})} style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} required/>
-                <input type="password" placeholder="Password" value={regData.password} onChange={e=>setRegData({...regData, password:e.target.value})} style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} required/>
+                <input 
+                  placeholder="Nombre Completo" 
+                  value={regData.nombre} 
+                  onChange={e=>setRegData({...regData, nombre:e.target.value})} 
+                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} 
+                  required
+                />
+                <input 
+                  type="email" 
+                  placeholder="Email" 
+                  value={regData.email} 
+                  onChange={e=>setRegData({...regData, email:e.target.value})} 
+                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} 
+                  required
+                />
+                <input 
+                  type="password" 
+                  placeholder="Password" 
+                  value={regData.password} 
+                  onChange={e=>setRegData({...regData, password:e.target.value})} 
+                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} 
+                  required
+                />
                 
-                <div style={{textAlign:'left', fontSize:'14px', background:'#f8fafc', padding:'10px', borderRadius:'6px'}}>
-                  <label style={{cursor:'pointer', display:'flex', alignItems:'center', gap:'5px'}}>
-                    <input type="checkbox" checked={regData.wantsAdmin} onChange={e=>setRegData({...regData, wantsAdmin:e.target.checked})}/> 
-                    ¿Dar permisos de Administrador?
-                  </label>
-                  {regData.wantsAdmin && (
-                    <div style={{fontSize:'11px', color:'#64748b', marginTop:'5px', marginLeft:'20px'}}>
-                        Se usará el código maestro para confirmar.
-                        <input 
-                            placeholder="Confirmar Código Maestro" 
-                            value={regData.adminCode} 
-                            onChange={e=>setRegData({...regData, adminCode:e.target.value})} 
-                            style={{marginTop:'5px', width:'100%', padding:'5px', boxSizing:'border-box'}}
-                        />
-                    </div>
-                  )}
-                </div>
+                {/* AQUÍ ELIMINAMOS EL CHECKBOX Y EL INPUT DE ADMIN CODE.
+                   Ahora es un formulario limpio y directo.
+                */}
 
                 <button disabled={regLoading} style={{padding:'12px', background:'#003786', color:'white', border:'none', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', marginTop:'10px'}}>
                   {regLoading ? 'Creando...' : 'Registrarse'}
