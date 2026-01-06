@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import '../styles/PolicyForm.css' // <--- IMPORTAMOS CSS
+import '../styles/PolicyForm.css'
 
 export default function PolicyForm() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -11,6 +11,9 @@ export default function PolicyForm() {
     numero_poliza: '', 
     numero_recibo: '', 
     aseguradora: 'Banorte',
+    tipo_poliza: 'Seguro de Vida',
+    vendedor: 'Oficina',
+    estado: 'pendiente', // <--- NUEVO CAMPO DE ESTADO
     forma_pago: 'Anual', 
     prima_neta: '', 
     prima_total: '',
@@ -33,13 +36,13 @@ export default function PolicyForm() {
   // --- API ---
   const handleSearch = async (term) => {
     setSearchTerm(term); if (term.length < 3) return
-    try { const res = await fetch(`http://localhost:3000/api/clientes/search?q=${term}`); const data = await res.json(); setClientsList(data) } catch (e) { console.error(e) }
+    try { const res = await fetch(`/api/clientes/search?q=${term}`); const data = await res.json(); setClientsList(data) } catch (e) { console.error(e) }
   }
   const handleSelectClient = (c) => { setSelectedClient(c); setClientsList([]); setSearchTerm('') }
 
   // --- SUBMIT ---
   const handleSubmit = async (e) => {
-    e.preventDefault(); if (!selectedClient) return alert("⚠️ Selecciona cliente")
+    e.preventDefault(); if (!selectedClient) return alert("Selecciona cliente")
     setLoading(true)
     try {
       const cleanPrimaNeta = parseFloat(policyData.prima_neta.toString().replace(/[^0-9.]/g, ''))
@@ -47,15 +50,18 @@ export default function PolicyForm() {
       
       const payload = { ...policyData, prima_neta: cleanPrimaNeta, prima_total: cleanPrimaTotal, cliente_id: selectedClient.id }
 
-      const res = await fetch('http://localhost:3000/api/polizas', {
+      const res = await fetch('/api/polizas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       })
       if (!res.ok) throw new Error("Error registrando")
       
       alert("✅ Póliza registrada correctamente"); 
       setPolicyData({ 
-        numero_poliza:'', numero_recibo:'', aseguradora: 'Banorte', forma_pago: 'Anual',
-        prima_neta:'', prima_total:'', poliza_inicio:'', poliza_fin:'', recibo_inicio:'', recibo_fin:'' 
+        numero_poliza:'', numero_recibo:'', aseguradora: 'Banorte', 
+        tipo_poliza: 'Seguro de Vida', vendedor: 'Oficina',
+        estado: 'pendiente', // Reiniciar estado
+        forma_pago: 'Anual', prima_neta:'', prima_total:'', 
+        poliza_inicio:'', poliza_fin:'', recibo_inicio:'', recibo_fin:'' 
       })
       setSelectedClient(null)
       setSearchTerm('')
@@ -74,7 +80,7 @@ export default function PolicyForm() {
                 <input 
                     className="search-input"
                     type="text" 
-                    placeholder="🔍 Buscar cliente..." 
+                    placeholder=" Buscar cliente..." 
                     value={searchTerm} 
                     onChange={(e) => handleSearch(e.target.value)} 
                 />
@@ -87,7 +93,7 @@ export default function PolicyForm() {
                 </div>
                 {selectedClient && (
                     <div className="selected-client-info">
-                        <div className="selected-name">👤 {selectedClient.nombre} {selectedClient.apellido}</div>
+                        <div className="selected-name"> {selectedClient.nombre} {selectedClient.apellido}</div>
                         <div className="selected-note">Se asignará la póliza a este cliente.</div>
                     </div>
                 )}
@@ -98,35 +104,80 @@ export default function PolicyForm() {
                 <h3 className="card-title">2. Detalles de Póliza</h3>
                 <form onSubmit={handleSubmit} className="policy-form">
                 
+                {/* FILA 1: Aseguradora y Tipo */}
                 <div className="form-row">
                     <div>
                         <label className="input-label">Aseguradora</label>
                         <select className="form-input" value={policyData.aseguradora} onChange={e => setPolicyData({...policyData, aseguradora:e.target.value})}>
-                            <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>HDI</option><option>Axa</option>
+                            <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>HDI</option><option>Axa</option><option>Allianz</option><option>Ana Seguros</option>
                         </select>
                     </div>
                     <div>
-                        <label className="input-label">Forma Pago</label>
+                        <label className="input-label">Tipo de Póliza</label>
+                        <select className="form-input" value={policyData.tipo_poliza} onChange={e => setPolicyData({...policyData, tipo_poliza:e.target.value})}>
+                            <option>Seguro de Vida</option>
+                            <option>Seguro de Auto</option>
+                            <option>Seguro de Gastos Médicos Mayores</option>
+                            <option>Seguro de Daños</option>
+                            <option>Plan Personal de Retiro</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* FILA 2: Vendedor y Estado */}
+                <div className="form-row">
+                    <div>
+                        <label className="input-label">Vendedor</label>
+                        <select className="form-input" value={policyData.vendedor} onChange={e => setPolicyData({...policyData, vendedor:e.target.value})}>
+                            <option>Oficina</option>
+                            <option>Shirley</option>
+                            <option>Yamile</option>
+                            <option>Gerardo</option>
+                            <option>Aaron</option>
+                            <option>Don Luis</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="input-label">Estado Inicial</label>
+                        <select 
+                            className="form-input" 
+                            value={policyData.estado} 
+                            onChange={e => setPolicyData({...policyData, estado:e.target.value})}
+                            style={{fontWeight:'bold', color: policyData.estado === 'pagado' ? '#166534' : '#854d0e'}}
+                        >
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagado">Pagado (Histórico)</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* FILA 3: Forma Pago y Poliza */}
+                <div className="form-row">
+                    <div>
+                         <label className="input-label">Forma Pago</label>
                         <select className="form-input" value={policyData.forma_pago} onChange={e => setPolicyData({...policyData, forma_pago:e.target.value})}>
                             <option>Mensual</option><option>Bimestral</option><option>Semestral</option><option>Trimestral</option><option>Cuatrimestral</option><option>Anual</option>
                         </select>
                     </div>
-                </div>
-
-                <div className="form-row">
                     <div>
                         <label className="input-label">No. Póliza</label>
                         <input className="form-input" type="text" required value={policyData.numero_poliza} onChange={e => setPolicyData({...policyData, numero_poliza:e.target.value})} />
                     </div>
+                </div>
+
+                 {/* FILA 4: Recibo */}
+                 <div className="form-row">
                     <div>
                         <label className="input-label">No. Recibo</label>
                         <input className="form-input" type="text" required value={policyData.numero_recibo} onChange={e => setPolicyData({...policyData, numero_recibo:e.target.value})} />
                     </div>
+                    {/* Espacio vacío para alinear si es necesario */}
+                     <div></div>
                 </div>
 
                 {/* VIGENCIA PÓLIZA */}
                 <div className="date-group policy">
-                    <label className="group-label policy">📅 Vigencia General de Póliza</label>
+                    <label className="group-label policy">Vigencia General de Póliza</label>
                     <div className="form-row">
                         <div>
                             <label className="mini-label">Inicio</label>
@@ -141,7 +192,7 @@ export default function PolicyForm() {
 
                 {/* VIGENCIA RECIBO */}
                 <div className="date-group receipt">
-                    <label className="group-label receipt">🧾 Cobertura del Recibo (Pago)</label>
+                    <label className="group-label receipt">Cobertura del Recibo (Pago)</label>
                     <div className="form-row">
                         <div>
                             <label className="mini-label">Desde</label>

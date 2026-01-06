@@ -9,9 +9,38 @@
   overflow: hidden; /* Evita scroll doble */
 }
 
+/* src/styles/Dashboard.css */
+
+/* Reemplaza o ajusta la clase .sidebar-header existente */
+.sidebar-header {
+  cursor: pointer;
+  margin-top: 0;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: center; /* Centrar logo */
+  align-items: center;
+  height: 50px; /* Altura fija para evitar saltos */
+}
+
+.brand-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: all 0.3s ease;
+}
+
+/* Ajuste específico para cuando el sidebar está cerrado */
+.sidebar.closed .brand-logo {
+  width: 40px; /* Tamaño icono */
+}
+
+.sidebar.open .brand-logo {
+  width: 180px; /* Tamaño logo largo */
+}
+
 /* --- SIDEBAR --- */
 .sidebar {
-  background: #0f172a;
+  background: #003786;
   color: white;
   padding: 20px;
   display: flex;
@@ -71,8 +100,8 @@
 }
 
 .nav-btn.active {
-  background: #1e293b;
-  color: #38bdf8;
+  background: #166be5;
+  color: #16191b;
   font-weight: 500;
 }
 
@@ -89,11 +118,21 @@
 
 .arrow-icon {
   font-size: 10px;
+  color: #166be5;
+  margin-left: auto;
+  transition: transform 0.3s ease; /* <--- LA MAGIA: Suaviza el movimiento */
+  display: inline-block; /* Necesario para que transform funcione */
+}
+
+/* Estado rotado */
+.arrow-icon.rotated {
+  transform: rotate(90deg); /* Gira 90 grados hacia abajo */
+  color: #166be5; /* Opcional: cambia de color al girar */
 }
 
 /* --- SUBMENÚS --- */
 .submenu-container {
-  background: #0f172a; /* Mismo fondo para continuidad o #162032 para contraste */
+  background: #003786;
   margin-bottom: 5px;
   border-radius: 0 0 6px 6px;
   overflow: hidden;

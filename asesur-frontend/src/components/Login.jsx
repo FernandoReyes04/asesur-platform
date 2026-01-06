@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
+import logoLargo from '../icons/LogoLargo.png'
 import '../styles/Login.css' // <--- IMPORTAMOS EL CSS AQUÍ
 
 export default function Login({ onLogin }) {
@@ -57,7 +58,7 @@ export default function Login({ onLogin }) {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1 className="login-title">ASESUR</h1>
+        <img src={logoLargo} alt="Grupo Asesur" className="login-logo" />
         <p className="login-subtitle">
           {isRecovering ? 'Recuperar Contraseña' : 'Bienvenido al sistema de gestión'}
         </p>

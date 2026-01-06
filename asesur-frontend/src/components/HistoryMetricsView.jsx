@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import '../styles/HistoryMetricsView.css' // <--- IMPORTAMOS CSS
+import GridSpinner from './GridSpinner'
+import '../styles/HistoryMetricsView.css'
 
 export default function HistoryMetricsView({ onBack }) {
   const [metrics, setMetrics] = useState(null)
@@ -17,8 +18,21 @@ export default function HistoryMetricsView({ onBack }) {
       { id: 10, label: 'OCT' }, { id: 11, label: 'NOV' }, { id: 12, label: 'DIC' }
   ]
 
+  // --- COLOR MAPPING (SAME AS METRICS VIEW) ---
+  const INSURER_COLORS = {
+    'Banorte': '#EB0029',            // Rojo
+    'Qualitas': '#6A1B9A',           // Morado
+    'Axa': '#00008F',                // Azul
+    'HDI': '#009640',                // Verde
+    'Atlas': '#F37021',              // Naranja
+    'Inbursa': '#004A8F',            // Azul Fuerte
+    'General de Seguros': '#00AEEF', // Azul Cian
+    'Latino': '#89CFF0',             // Azul Claro
+    'default': '#999999'             // Fallback
+  }
+
   useEffect(() => {
-    fetch('http://localhost:3000/api/metricas')
+    fetch('/api/metricas')
       .then(res => res.json())
       .then(data => {
         setMetrics(data)
@@ -73,10 +87,25 @@ export default function HistoryMetricsView({ onBack }) {
       }).filter(i => i.value > 0).sort((a,b) => b.value - a.value)
   }, [filteredData, metrics])
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
   const money = (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val)
 
-  if (loading) return <div className="loading-view">Cargando historial...</div>
+  if (loading) {
+    return (
+      <div style={{
+        height: '400px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: '20px'
+      }}>
+        <GridSpinner />
+        <div style={{color:'#64748b', fontSize:'14px', fontWeight:'500'}}>
+          Cargando panel...
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="history-container">
@@ -142,7 +171,7 @@ export default function HistoryMetricsView({ onBack }) {
           
           {/* 1. BARRAS */}
           <div className="chart-box">
-              <h3 className="chart-title">📊 Comparativa Mensual</h3>
+              <h3 className="chart-title">Comparativa Mensual</h3>
               <p className="chart-desc">
                   {selectedMonths.length > 1 ? 'Comparando rendimiento entre los meses seleccionados.' : 'Visualizando detalle del mes seleccionado.'}
               </p>
@@ -156,8 +185,8 @@ export default function HistoryMetricsView({ onBack }) {
                             <YAxis />
                             <Tooltip formatter={(value) => money(value)} labelFormatter={(label) => `Periodo: ${label}`} />
                             <Legend />
-                            <Bar dataKey="total" name="Venta Total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="neta" name="Utilidad" fill="#10b981" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="total" name="Venta Total" fill="#003786" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="neta" name="Utilidad" fill="#166be5" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -168,17 +197,30 @@ export default function HistoryMetricsView({ onBack }) {
               )}
           </div>
 
-          {/* 2. PASTEL */}
+          {/* 2. PASTEL (COLORES ACTUALIZADOS) */}
           <div className="chart-box">
-              <h3 className="chart-title">🍰 Share Acumulado</h3>
+              <h3 className="chart-title">Participación por Aseguradora</h3>
               <p className="chart-desc">Distribución total en la selección.</p>
               
               {periodPieData.length > 0 ? (
                   <div className="chart-container">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={periodPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                {periodPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                            <Pie 
+                                data={periodPieData} 
+                                cx="50%" 
+                                cy="50%" 
+                                innerRadius={60} 
+                                outerRadius={80} 
+                                paddingAngle={5} 
+                                dataKey="value"
+                            >
+                                {periodPieData.map((entry, index) => (
+                                    <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={INSURER_COLORS[entry.name] || INSURER_COLORS['default']} 
+                                    />
+                                ))}
                             </Pie>
                             <Tooltip formatter={(value) => money(value)} />
                             <Legend />

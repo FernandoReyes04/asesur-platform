@@ -11,6 +11,7 @@ import DashboardHome from './DashboardHome'
 import ProfileModal from './ProfileModal'
 import RenewalsView from './RenewalsView'
 
+// --- ICONOS ---
 import panelIconPanel from '../icons/panel.png'
 import panelIconClient from '../icons/cliente.png'
 import panelIconPolicies from '../icons/papel.png'
@@ -21,6 +22,10 @@ import panelIconStadistics from '../icons/tendencia.png'
 import panelIconConfig from '../icons/configuracion.png'
 import panelIconRecibe from '../icons/recibo.png'
 import panelIconCircle from '../icons/circulo.png'
+
+// --- LOGOS ---
+import logoLargo from '../icons/LogoLargo.png' // <--- IMPORTANTE
+import logoCorto from '../icons/Logo.png'      // <--- IMPORTANTE
 
 // IMPORTAMOS LOS ESTILOS
 import '../styles/Dashboard.css'
@@ -77,12 +82,10 @@ export default function Dashboard({ user, onLogout }) {
   }
 
   // --- HELPER PARA CLASES ACTIVAS ---
-  // Esto reemplaza las funciones btnStyle y subBtnStyle
   const getNavClass = (viewName) => {
       return `nav-btn ${currentView === viewName ? 'active' : ''}`
   }
   
-  // Para los botones padres que se iluminan si un hijo está activo
   const getParentNavClass = (isActiveCondition) => {
       return `nav-btn nav-btn-dropdown ${isActiveCondition ? 'active' : ''}`
   }
@@ -97,9 +100,14 @@ export default function Dashboard({ user, onLogout }) {
       {/* SIDEBAR */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div>
-           <h2 onClick={()=>setIsSidebarOpen(!isSidebarOpen)} className="sidebar-header">
-             {isSidebarOpen ? 'ASESUR' : 'A'}
-           </h2>
+           {/* --- LOGO DINÁMICO --- */}
+           <div onClick={()=>setIsSidebarOpen(!isSidebarOpen)} className="sidebar-header">
+             <img 
+               src={isSidebarOpen ? logoLargo : logoCorto} 
+               alt="ASESUR" 
+               className="brand-logo" 
+             />
+           </div>
            
            <nav className="nav-menu">
              <button onClick={() => setCurrentView('home')} className={getNavClass('home')}>
@@ -124,9 +132,12 @@ export default function Dashboard({ user, onLogout }) {
                     <img src={panelIconPolicies} alt="Pólizas" className="nav-icon" />
                    {isSidebarOpen && <span>Gestión de Pólizas</span>}
                </div>
-               {isSidebarOpen && <span className="arrow-icon">{showPoliciesMenu ? '▼' : '▶'}</span>}
+               {isSidebarOpen && (
+  <span className={`arrow-icon ${showPoliciesMenu ? 'rotated' : ''}`}>
+    ▶
+  </span>
+)}
              </button>
-
              {isSidebarOpen && showPoliciesMenu && (
                  <div className="submenu-container">
                      <button onClick={() => setCurrentView('polizas-nueva')} className={getSubNavClass('polizas-nueva')}>
@@ -143,7 +154,6 @@ export default function Dashboard({ user, onLogout }) {
                {isSidebarOpen && <span>Registros</span>}
              </button>
              
-             {/* Reportes y métricas (incluye la vista de historial como activa) */}
              <button onClick={() => setCurrentView('metricas')} className={`nav-btn ${currentView === 'metricas' || currentView === 'history-metrics' ? 'active' : ''}`}>
                 <img src={panelIconStadistics} alt="Reportes" className="nav-icon" />
                {isSidebarOpen && <span>Reportes</span>}
@@ -161,7 +171,12 @@ export default function Dashboard({ user, onLogout }) {
                     <img src={panelIconConfig} alt="Administración" className="nav-icon" />
                    {isSidebarOpen && <span>Cobranza</span>}
                </div>
-               {isSidebarOpen && <span className="arrow-icon">{showAdminMenu ? '▼' : '▶'}</span>}
+               {/* Mantén siempre el mismo icono, pero agrega la clase 'rotated' si está abierto */}
+{isSidebarOpen && (
+  <span className={`arrow-icon ${showAdminMenu ? 'rotated' : ''}`}>
+    ▶
+  </span>
+)}
              </button>
 
              {isSidebarOpen && showAdminMenu && (
@@ -179,7 +194,7 @@ export default function Dashboard({ user, onLogout }) {
         </div>
         
         <button onClick={handleLogoutClick} className="logout-btn">
-          {isSidebarOpen ? 'Cerrar Sesión' : '🚪'}
+          {isSidebarOpen ? 'Cerrar Sesión' : ''}
         </button>
       </aside>
 

@@ -45,6 +45,7 @@ app.use('/api/polizas', policyRoutes)
 app.use('/api/registros', recordsRoutes)
 app.use('/api/metricas', metricsRoutes)
 app.use('/api/notificaciones', notificationRoutes)
+app.use('/api/config', require('./src/routes/configRoutes'))
 
 // Iniciar el reloj
 initCronJob()

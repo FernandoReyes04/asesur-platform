@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import GridSpinner from './GridSpinner'
 import '../styles/NotificationsView.css' // <--- IMPORTAMOS CSS
 
 export default function NotificationsView() {
@@ -12,7 +13,7 @@ export default function NotificationsView() {
   const [filterStatus, setFilterStatus] = useState('Todos')
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/notificaciones')
+    fetch('/api/notificaciones')
       .then(res => res.json())
       .then(result => {
         const overdue = (result.overdue || []).map(i => ({ ...i, status: 'Vencido' }))
@@ -78,7 +79,23 @@ export default function NotificationsView() {
 
   const money = (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val)
 
-  if (loading) return <div className="loading-container">Cargando tablero...</div>
+  if (loading) {
+    return (
+      <div style={{
+        height: '400px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: '20px'
+      }}>
+        <GridSpinner />
+        <div style={{color:'#64748b', fontSize:'14px', fontWeight:'500'}}>
+          Cargando panel...
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="notifications-container">

@@ -164,3 +164,32 @@
   color: #94a3b8;
   font-style: italic;
 }
+
+/* Botón Cancelar */
+.cancel-btn {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #fee2e2;
+}
+
+/* Badge Cancelada */
+.status-cancelled {
+  background: #f3f4f6;
+  color: #6b7280;
+  text-decoration: line-through;
+}
+.status-warning {
+    background: #ffedd5;
+    color: #c2410c; /* Naranja fuerte */
+    font-weight: bold;
+}

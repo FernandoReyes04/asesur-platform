@@ -33,7 +33,7 @@ export default function ClientManagement({ user }) {
   const fetchClients = async (term) => {
     try {
       const query = term || 'a'
-      const response = await fetch(`http://localhost:3000/api/clientes/search?q=${query}`)
+      const response = await fetch(`/api/clientes/search?q=${query}`)
       const data = await response.json()
       setClientsList(data)
     } catch (error) { console.error(error) }
@@ -91,7 +91,7 @@ export default function ClientManagement({ user }) {
       const payload = { ...formData, ine_url: publicUrl, agente_id: user.id || user.user?.id }
       delete payload.archivo; delete payload.ine_url_existente;
 
-      const url = selectedClient ? `http://localhost:3000/api/clientes/${selectedClient.id}` : 'http://localhost:3000/api/clientes'
+      const url = selectedClient ? `/api/clientes/${selectedClient.id}` : '/api/clientes'
       const method = selectedClient ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
@@ -117,7 +117,7 @@ export default function ClientManagement({ user }) {
       <div className="client-form-card">
         <div className="form-header">
            <h3 className={`form-title ${selectedClient ? 'title-edit' : 'title-new'}`}>
-             {selectedClient ? '✏️ Editar' : '🚀 Nuevo'}
+             {selectedClient ? 'Editar' : 'Nuevo'}
            </h3>
            {selectedClient && <button onClick={handleReset} className="cancel-btn">Cancelar</button>}
         </div>
@@ -172,7 +172,7 @@ export default function ClientManagement({ user }) {
 
       {/* --- TABLA --- */}
       <div className="client-list-card">
-        <input className="form-input search-input" placeholder="🔍 Buscar por nombre, apellido o RFC..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input className="form-input search-input" placeholder="Buscar por nombre, apellido o RFC..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         
         <table className="client-table">
           <thead>

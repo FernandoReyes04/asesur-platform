@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api' // Tu Backend
+const API_URL = '/api' // Tu Backend
 
 export const authService = {
   

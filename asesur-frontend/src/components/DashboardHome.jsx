@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { supabase } from '../supabaseClient' 
-import '../styles/DashboardHome.css' // <--- IMPORTANTE
+import GridSpinner from './GridSpinner'
+import '../styles/DashboardHome.css'
 
 export default function DashboardHome({ userName }) {
   const [loading, setLoading] = useState(true)
@@ -10,10 +11,37 @@ export default function DashboardHome({ userName }) {
   const [pieData, setPieData] = useState([])
   const [team, setTeam] = useState([])
   
+  // --- CONFIGURATION WIDGET STATES ---
+  const [configEmail, setConfigEmail] = useState('')
+  const [configTime, setConfigTime] = useState('09:00') // Default time
+  
+  const [isEditingConfig, setIsEditingConfig] = useState(false)
+  const [authInput, setAuthInput] = useState('')
+  const [showAuth, setShowAuth] = useState(false)
+  
+  // Temp states for editing
+  const [tempEmail, setTempEmail] = useState('')
+  const [tempTime, setTempTime] = useState('')
+  
+  const MASTER_KEY = 'Asesur2026'
+
   const [exchangeRates, setExchangeRates] = useState({ 
       usd: { today: 0, yesterday: 0 }, 
       udi: { today: 0, yesterday: 0 } 
   })
+
+  // --- COLOR MAPPING ---
+  const INSURER_COLORS = {
+    'Banorte': '#EB0029',            
+    'Qualitas': '#6A1B9A',           
+    'Axa': '#00008F',                
+    'HDI': '#009640',                
+    'Atlas': '#F37021',              
+    'Inbursa': '#004A8F',            
+    'General de Seguros': '#00AEEF', 
+    'Latino': '#89CFF0',             
+    'default': '#999999'             
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,26 +52,34 @@ export default function DashboardHome({ userName }) {
         const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
         const todayStr = today.toISOString().split('T')[0]
         
-        // 1. FINANZAS
+        // 0. LOAD CONFIGURATION (Email & Time)
+        fetch('/api/config/email')
+            .then(res => res.json())
+            .then(data => {
+                setConfigEmail(data.email || 'No configurado')
+                setConfigTime(data.time || '09:00')
+            })
+            .catch(err => console.error("Error loading config:", err))
+
+        // 1. FINANCIALS
         const fetchFinancials = async () => {
             try {
                 const resUsd = await fetch('https://open.er-api.com/v6/latest/USD');
                 const dataUsd = await resUsd.json();
                 const usdToday = dataUsd.rates.MXN;
                 const udiBase = 8.6672; 
-                
                 return {
                     usd: { today: usdToday.toFixed(2), yesterday: (usdToday - 0.08).toFixed(2) },
                     udi: { today: udiBase.toFixed(4), yesterday: (udiBase - 0.0004).toFixed(4) }
                 }
             } catch (e) {
-                console.error("Error financiero:", e);
+                console.error("Financial error:", e);
                 return { usd: { today: 17.95, yesterday: 17.88 }, udi: { today: 8.6672, yesterday: 8.6668 } }
             }
         };
         const ratesData = await fetchFinancials();
 
-        // 2. COBRANZA
+        // 2. URGENT REMINDERS
         const limitDate = new Date()
         limitDate.setDate(limitDate.getDate() + 15)
         const limitStr = limitDate.toISOString().split('T')[0]
@@ -57,8 +93,8 @@ export default function DashboardHome({ userName }) {
           .order('recibo_inicio', { ascending: true })
           .limit(5)
 
-        // 3. VENTAS
-        const resMetrics = await fetch('http://localhost:3000/api/metricas')
+        // 3. SALES
+        const resMetrics = await fetch('/api/metricas')
         const metricsData = await resMetrics.json()
         let chartData = []
         if(metricsData && metricsData.insurerDetailed) {
@@ -68,10 +104,10 @@ export default function DashboardHome({ userName }) {
             })).filter(i => i.value > 0)
         }
 
-        // 4. EQUIPO
+        // 4. TEAM
         const { data: profiles } = await supabase.from('profiles').select('id, nombre, email, rol').order('nombre', { ascending: true })
 
-        // 5. CUMPLEAÑOS
+        // 5. BIRTHDAYS
         const { data: clients } = await supabase.from('clientes').select('nombre, apellido, fecha_nacimiento, telefono')
         
         const mesActualBirthdays = (clients || []).filter(c => {
@@ -80,7 +116,8 @@ export default function DashboardHome({ userName }) {
             return (dob.getMonth() + 1) === currentMonth
         }).sort((a,b) => {
             const dayA = new Date(a.fecha_nacimiento).getDate()
-            return dayA - new Date(b.fecha_nacimiento).getDate()
+            const dayB = new Date(b.fecha_nacimiento).getDate()
+            return dayA - dayB
         }).slice(0, 5) 
 
         setExchangeRates(ratesData)
@@ -91,17 +128,59 @@ export default function DashboardHome({ userName }) {
         setLoading(false)
 
       } catch (error) {
-        console.error("Error dashboard:", error)
+        console.error("Dashboard error:", error)
         setLoading(false)
       }
     }
     fetchData()
   }, [])
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : 'U'
 
-  if (loading) return <div style={{padding:'40px', color:'#64748b'}}>Cargando panel...</div>
+  // --- CONFIG WIDGET LOGIC ---
+  const handleUnlock = () => {
+      if(authInput === MASTER_KEY) {
+          setIsEditingConfig(true)
+          setTempEmail(configEmail)
+          setTempTime(configTime) // Load current time into temp
+          setShowAuth(false)
+          setAuthInput('')
+      } else {
+          alert("⛔ Clave incorrecta")
+      }
+  }
+
+  const handleSaveConfig = async () => {
+      try {
+          const res = await fetch('/api/config/email', {
+              method: 'PUT',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ email: tempEmail, time: tempTime })
+          })
+          
+          if(res.ok) {
+              setConfigEmail(tempEmail)
+              setConfigTime(tempTime)
+              setIsEditingConfig(false)
+              alert("✅ Configuración actualizada. Se envió un correo de verificación.")
+          } else {
+              const errData = await res.json()
+              alert("Error al guardar: " + (errData.error || "Desconocido"))
+          }
+      } catch(e) { 
+          console.error("Save error:", e)
+          alert("Error de conexión al guardar")
+      }
+  }
+
+  if (loading) {
+    return (
+      <div style={{height: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '20px'}}>
+        <GridSpinner />
+        <div style={{color:'#64748b', fontSize:'14px', fontWeight:'500'}}>Cargando panel...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="dashboard-home-container">
@@ -113,15 +192,13 @@ export default function DashboardHome({ userName }) {
 
       <div className="dashboard-grid">
         
-        {/* 1. TIPO DE CAMBIO */}
+        {/* 1. EXCHANGE RATES */}
         <div className="dashboard-card">
             <h3 className="card-title">Tipo de cambio</h3>
             <div className="table-container">
                 <table className="dashboard-table">
                     <thead>
-                        <tr>
-                            <th>Divisa</th><th>Hoy</th><th>Ayer</th>
-                        </tr>
+                        <tr><th>Divisa</th><th>Hoy</th><th>Ayer</th></tr>
                     </thead>
                     <tbody>
                         <tr className="row-border">
@@ -140,7 +217,7 @@ export default function DashboardHome({ userName }) {
             <p className="card-footer-note">* Fuente: Open Exchange & Banxico (Oficial)</p>
         </div>
 
-        {/* 2. COBRANZA RÁPIDA */}
+        {/* 2. URGENT REMINDERS */}
         <div className="dashboard-card">
             <h3 className="card-title">Cobranza Urgente (15 días)</h3>
             {reminders.length === 0 ? (
@@ -151,7 +228,6 @@ export default function DashboardHome({ userName }) {
                         const diff = new Date(p.recibo_inicio) - new Date()
                         const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
                         const isUrgent = days <= 3
-                        
                         return (
                             <li key={i} className="list-item">
                                 <div>
@@ -159,8 +235,7 @@ export default function DashboardHome({ userName }) {
                                     <span className="item-secondary">{p.aseguradora} • {p.numero_poliza}</span>
                                 </div>
                                 <div className={`days-badge ${isUrgent ? 'urgent' : 'warning'}`}>
-                                    {days} días <br/>
-                                    <span className="days-label">restantes</span>
+                                    {days} días <br/><span className="days-label">restantes</span>
                                 </div>
                             </li>
                         )
@@ -169,7 +244,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 3. VENTAS DEL MES */}
+        {/* 3. MONTHLY SALES */}
         <div className="dashboard-card">
             <h3 className="card-title">Ventas del Mes Actual</h3>
             {pieData.length === 0 ? (
@@ -178,9 +253,11 @@ export default function DashboardHome({ userName }) {
                 <div className="chart-wrapper">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                            <Pie 
+                                data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value"
+                            >
                                 {pieData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    <Cell key={`cell-${index}`} fill={INSURER_COLORS[entry.name] || INSURER_COLORS['default']} />
                                 ))}
                             </Pie>
                             <Tooltip formatter={(val) => `$${val}`} />
@@ -191,7 +268,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 4. EQUIPO DE TRABAJO */}
+        {/* 4. TEAM */}
         <div className="dashboard-card">
             <h3 className="card-title">Equipo de Trabajo</h3>
             {team.length === 0 ? (
@@ -200,14 +277,9 @@ export default function DashboardHome({ userName }) {
                 <ul className="list-container">
                     {team.map((member, i) => (
                         <li key={i} className="list-item">
-                            <div className="avatar-circle-large">
-                                {getInitials(member.nombre)}
-                            </div>
+                            <div className="avatar-circle-large">{getInitials(member.nombre)}</div>
                             <div style={{flex:1}}>
-                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                    <strong className="item-primary">{member.nombre}</strong>
-                                    
-                                </div>
+                                <strong className="item-primary">{member.nombre}</strong>
                                 <div className="item-secondary">{member.email}</div>
                             </div>
                         </li>
@@ -216,7 +288,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 5. CUMPLEAÑOS */}
+        {/* 5. BIRTHDAYS */}
         <div className="dashboard-card">
             <h3 className="card-title">Cumpleaños del Mes</h3>
             {birthdays.length === 0 ? (
@@ -233,13 +305,83 @@ export default function DashboardHome({ userName }) {
                                     <strong className="item-primary">{c.nombre} {c.apellido}</strong>
                                     <span className="item-secondary">Tel: {c.telefono || '-'}</span>
                                 </div>
-                                <div className="birthday-badge">
-                                    Día {day} • {ageTurning} años
-                                </div>
+                                <div className="birthday-badge">Día {day} • {ageTurning} años</div>
                             </li>
                         )
                     })}
                 </ul>
+            )}
+        </div>
+
+        {/* 6. CONFIGURATION WIDGET (UPDATED) */}
+        <div className="dashboard-card" style={{borderLeft: '4px solid #F37021'}}>
+            <h3 className="card-title">Notificaciones Automáticas</h3>
+            <p style={{fontSize:'12px', color:'#64748b', marginBottom:'10px'}}>
+               Reporte diario de renovaciones y cobranza.
+            </p>
+
+            {/* NORMAL VIEW */}
+            {!isEditingConfig && !showAuth && (
+                <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <div style={{background:'#f1f5f9', padding:'10px', borderRadius:'6px', color:'#334155', fontSize:'13px'}}>
+                       <div style={{marginBottom:'5px'}}>📩 <strong>{configEmail}</strong></div>
+                       <div>⏰ Hora de envío: <strong>{configTime} hrs</strong></div>
+                    </div>
+                    <button 
+                        onClick={() => setShowAuth(true)}
+                        style={{background:'#0f172a', color:'white', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer', fontSize:'12px'}}
+                    >
+                        Configurar
+                    </button>
+                </div>
+            )}
+
+            {/* AUTH VIEW */}
+            {showAuth && !isEditingConfig && (
+                <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <input 
+                        type="password" 
+                        placeholder="Clave Maestra" 
+                        value={authInput} 
+                        onChange={e => setAuthInput(e.target.value)}
+                        style={{padding:'8px', borderRadius:'4px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box'}}
+                    />
+                    <div style={{display:'flex', gap:'5px'}}>
+                        <button onClick={handleUnlock} style={{flex:1, background:'#F37021', color:'white', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Desbloquear</button>
+                        <button onClick={() => setShowAuth(false)} style={{background:'#ccc', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>✕</button>
+                    </div>
+                </div>
+            )}
+
+            {/* EDIT VIEW */}
+            {isEditingConfig && (
+                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <div>
+                        <label style={{fontSize:'11px', fontWeight:'bold', color:'#64748b'}}>Correo Destino:</label>
+                        <input 
+                            type="email" 
+                            value={tempEmail} 
+                            onChange={e => setTempEmail(e.target.value)}
+                            placeholder="ejemplo@asesur.com"
+                            style={{padding:'8px', borderRadius:'4px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box', marginTop:'2px'}}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label style={{fontSize:'11px', fontWeight:'bold', color:'#64748b'}}>Hora de Envío:</label>
+                        <input 
+                            type="time" 
+                            value={tempTime} 
+                            onChange={e => setTempTime(e.target.value)}
+                            style={{padding:'8px', borderRadius:'4px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box', marginTop:'2px'}}
+                        />
+                    </div>
+
+                    <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
+                        <button onClick={handleSaveConfig} style={{flex:1, background:'#166534', color:'white', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Guardar y Verificar</button>
+                        <button onClick={() => setIsEditingConfig(false)} style={{background:'#ccc', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Cancelar</button>
+                    </div>
+                </div>
             )}
         </div>
 

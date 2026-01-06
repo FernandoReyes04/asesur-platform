@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import '../styles/RecordsView.css' // <--- IMPORTAMOS CSS
+import '../styles/RecordsView.css'
 
 export default function RecordsView() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -17,7 +17,7 @@ export default function RecordsView() {
     setSearchTerm(term)
     setLoading(true)
     try {
-      const response = await fetch(`http://localhost:3000/api/registros/search?q=${term}`)
+      const response = await fetch(`/api/registros/search?q=${term}`)
       const data = await response.json()
       setResults(data)
       setExpandedClientId(null) 
@@ -36,7 +36,7 @@ export default function RecordsView() {
 
   const handleSaveChanges = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/polizas/${selectedRecord.poliza.id}`, {
+      const response = await fetch(`/api/polizas/${selectedRecord.poliza.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editFormData)
@@ -64,6 +64,7 @@ export default function RecordsView() {
     switch (estado) {
         case 'pagado': return { bg: '#dcfce7', text: '#166534' } 
         case 'vencido': return { bg: '#fee2e2', text: '#991b1b' } 
+        case 'cancelada': return { bg: '#f3f4f6', text: '#6b7280' } // Estilo para cancelada
         default: return { bg: '#fef9c3', text: '#854d0e' } 
     }
   }
@@ -73,11 +74,11 @@ export default function RecordsView() {
       
       {/* BARRA DE BÚSQUEDA */}
       <div className="search-card">
-        <h2 className="search-title">📂 Consulta de Registros</h2>
+        <h2 className="search-title">Consulta de Registros</h2>
         <input 
             className="search-input"
             type="text" 
-            placeholder="🔎 Buscar por Nombre, Apellido o Número de Póliza..." 
+            placeholder="Buscar por Nombre, Apellido o Número de Póliza..." 
             value={searchTerm} 
             onChange={(e) => handleSearch(e.target.value)} 
         />
@@ -109,7 +110,7 @@ export default function RecordsView() {
                         <span className={`policy-count-badge ${hasPolicies ? 'badge-active' : 'badge-inactive'}`}>
                             {cliente.polizas.length} Póliza(s)
                         </span>
-                        <span className={`arrow-icon ${isExpanded ? 'rotated' : ''}`}>▼</span>
+                        <span className={`arrow-icon ${isExpanded ? 'rotated' : ''}`}>▶</span>
                     </div>
                 </div>
 
@@ -124,6 +125,7 @@ export default function RecordsView() {
                                 <tr>
                                     <th>No. Póliza</th>
                                     <th>Aseguradora</th>
+                                    <th>Tipo</th> {/* Nuevo Header */}
                                     <th>Vigencia</th>
                                     <th>Total</th>
                                     <th>Estado</th>
@@ -137,6 +139,7 @@ export default function RecordsView() {
                                     <tr key={p.id}>
                                     <td className="policy-number">{p.numero_poliza}</td>
                                     <td>{p.aseguradora}</td>
+                                    <td style={{fontSize:'12px', color:'#64748b'}}>{p.tipo_poliza || '-'}</td> {/* Nueva Celda */}
                                     <td className="date-range">
                                         <div className="date-start">Del: {p.recibo_inicio}</div>
                                         <div className="date-end">Al: {p.recibo_fin}</div>
@@ -174,16 +177,16 @@ export default function RecordsView() {
 
             <div className="modal-header">
                <div>
-                  <h2 className="modal-title">📄 Póliza <span className="highlight">#{selectedRecord.poliza.numero_poliza}</span></h2>
+                  <h2 className="modal-title">Póliza <span className="highlight">#{selectedRecord.poliza.numero_poliza}</span></h2>
                   <p className="modal-subtitle">Detalle del registro seleccionado</p>
                </div>
                
                {!isEditing ? (
-                 <button onClick={() => setIsEditing(true)} className="action-btn btn-edit">✏️ Editar Datos</button>
+                 <button onClick={() => setIsEditing(true)} className="action-btn btn-edit">Editar Datos</button>
                ) : (
                  <div style={{display:'flex', gap:'10px'}}>
                    <button onClick={() => setIsEditing(false)} className="action-btn btn-cancel">Cancelar</button>
-                   <button onClick={handleSaveChanges} className="action-btn btn-save">💾 Guardar Cambios</button>
+                   <button onClick={handleSaveChanges} className="action-btn btn-save">Guardar Cambios</button>
                  </div>
                )}
             </div>
@@ -225,33 +228,59 @@ export default function RecordsView() {
               {/* DERECHA: PÓLIZA */}
               <div>
                 <h4 className="section-header">
-                    {isEditing ? '✏️ Editando Detalles de Póliza' : 'Detalles de la Póliza'}
+                    {isEditing ? 'Editando Detalles de Póliza' : 'Detalles de la Póliza'}
                 </h4>
                 
                 <div className="info-group">
                   
+                  {/* FILA 1: Aseguradora y Tipo */}
                   <div className="edit-row">
-                    <span style={{fontSize:'13px', color:'#0369a1', fontWeight:'bold'}}>Aseguradora:</span>
-                    {isEditing ? (
-                        <select value={editFormData.aseguradora || 'Banorte'} onChange={e=>setEditFormData({...editFormData, aseguradora:e.target.value})} className="edit-input">
-                            <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>El Aguila</option><option>Axxa</option>
-                        </select>
-                    ) : (
-                        <span style={{fontWeight:'bold', color:'#0284c7', fontSize:'16px'}}>{selectedRecord.poliza.aseguradora || '---'}</span>
-                    )}
+                    <div style={{flex:1, marginRight:'10px'}}>
+                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Aseguradora</span>
+                        {isEditing ? (
+                            <select value={editFormData.aseguradora || 'Banorte'} onChange={e=>setEditFormData({...editFormData, aseguradora:e.target.value})} className="edit-input">
+                                <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>El Aguila</option><option>Axxa</option>
+                            </select>
+                        ) : (
+                            <span style={{fontWeight:'bold', color:'#0284c7', fontSize:'14px'}}>{selectedRecord.poliza.aseguradora || '---'}</span>
+                        )}
+                    </div>
+                    <div style={{flex:1}}>
+                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Tipo de Póliza</span>
+                        {isEditing ? (
+                            <select value={editFormData.tipo_poliza} onChange={e=>setEditFormData({...editFormData, tipo_poliza:e.target.value})} className="edit-input">
+                                <option>Seguro de Vida</option><option>Seguro de Auto</option><option>Seguro de Gastos Médicos Mayores</option><option>Seguro de Daños</option><option>Plan Personal de Retiro</option>
+                            </select>
+                        ) : (
+                            <span style={{fontWeight:'bold', color:'#334155', fontSize:'14px'}}>{selectedRecord.poliza.tipo_poliza || '---'}</span>
+                        )}
+                    </div>
                   </div>
 
-                  <div className="status-row">
-                    <span style={{fontSize:'13px', color:'#64748b'}}>Estado:</span>
-                    {isEditing ? (
-                        <select value={editFormData.estado} onChange={e=>setEditFormData({...editFormData, estado:e.target.value})} className="edit-input">
-                            <option value="activa">ACTIVA</option><option value="cancelada">CANCELADA</option><option value="vencida">VENCIDA</option>
-                        </select>
-                    ) : (
-                        <span style={{fontWeight:'bold', color: getStatusStyle(selectedRecord.poliza.estado).text, textTransform:'uppercase'}}>
-                            {selectedRecord.poliza.estado}
-                        </span>
-                    )}
+                  {/* FILA 2: Vendedor y Estado */}
+                  <div className="status-row" style={{display:'flex', gap:'10px'}}>
+                    <div style={{flex:1}}>
+                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Vendedor</span>
+                        {isEditing ? (
+                            <select value={editFormData.vendedor} onChange={e=>setEditFormData({...editFormData, vendedor:e.target.value})} className="edit-input">
+                                <option>Oficina</option><option>Shirley</option><option>Yamile</option><option>Gerardo</option><option>Aaron</option><option>Don Luis</option>
+                            </select>
+                        ) : (
+                            <span style={{fontWeight:'bold', color:'#334155', fontSize:'14px'}}>{selectedRecord.poliza.vendedor || 'Oficina'}</span>
+                        )}
+                    </div>
+                    <div style={{flex:1}}>
+                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Estado</span>
+                        {isEditing ? (
+                            <select value={editFormData.estado} onChange={e=>setEditFormData({...editFormData, estado:e.target.value})} className="edit-input">
+                                <option value="activa">ACTIVA</option><option value="cancelada">CANCELADA</option><option value="vencida">VENCIDA</option>
+                            </select>
+                        ) : (
+                            <span style={{fontWeight:'bold', color: getStatusStyle(selectedRecord.poliza.estado).text, textTransform:'uppercase'}}>
+                                {selectedRecord.poliza.estado}
+                            </span>
+                        )}
+                    </div>
                   </div>
 
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>

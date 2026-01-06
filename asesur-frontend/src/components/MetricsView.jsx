@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { supabase } from '../supabaseClient'
-import '../styles/MetricsView.css' // <--- IMPORTAMOS CSS
+import GridSpinner from './GridSpinner'
+import '../styles/MetricsView.css'
 
 export default function MetricsView({ onViewHistory }) {
   const [metrics, setMetrics] = useState(null)
@@ -12,9 +13,23 @@ export default function MetricsView({ onViewHistory }) {
   const [selectedInsurer, setSelectedInsurer] = useState('Banorte')
   const ASEGURADORAS_LIST = ['Banorte', 'Atlas', 'Qualitas', 'Inbursa', 'General de Seguros', 'Latino', 'HDI', 'Axa']
 
+  // Defining color mapping for insurers
+  const INSURER_COLORS = {
+    'Banorte': '#EB0029',            // Rojo
+    'Qualitas': '#6A1B9A',           // Morado
+    'Axa': '#00008F',                // Azul (AXA usa un azul oscuro característico)
+    'HDI': '#009640',                // Verde
+    'Atlas': '#F37021',              // Naranja
+    'Inbursa': '#004A8F',            // Azul Fuerte
+    'General de Seguros': '#00AEEF', // Azul Cian
+    'Latino': '#89CFF0',             // Azul Claro (Baby Blue)
+    // Fallback color for unknown insurers
+    'default': '#999999' 
+  }
+
   useEffect(() => {
     // 1. Carga Métricas
-    const fetchFinancials = fetch('http://localhost:3000/api/metricas')
+    const fetchFinancials = fetch('/api/metricas')
       .then(res => {
         if (!res.ok) throw new Error('Error conectando al servidor')
         return res.json()       
@@ -99,10 +114,25 @@ export default function MetricsView({ onViewHistory }) {
       })).filter(item => item.value > 0)
   }, [metrics])
 
-  if (loading) return <div className="loading-container"><h2>🔄 Calculando finanzas...</h2></div>
+  if (loading) {
+    return (
+      <div style={{
+        height: '400px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: '20px'
+      }}>
+        <GridSpinner />
+        <div style={{color:'#64748b', fontSize:'14px', fontWeight:'500'}}>
+          Cargando panel...
+        </div>
+      </div>
+    )
+  }
   if (error) return <div className="error-container"><h2>⚠️ Error de conexión</h2><p>{error}</p></div>
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ff6b6b', '#4ecdc4']
   const money = (val) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val)
   const currentInsurerData = metrics.insurerDetailed?.find(i => i.name === selectedInsurer)
   const availableOptions = Array.from(new Set([...ASEGURADORAS_LIST, ...(metrics.insurerDetailed?.map(i => i.name) || [])])).sort()
@@ -113,14 +143,14 @@ export default function MetricsView({ onViewHistory }) {
       {/* HEADER */}
       <div className="header-row">
         <div>
-            <h2 className="page-title">📈 Reporte Financiero</h2>
+            <h2 className="page-title">Reporte Financiero</h2>
             <p className="page-subtitle">
                 Panorama actual de <strong>{currentStats.monthName}</strong> y acumulados.
             </p>
         </div>
         
         <button onClick={onViewHistory} className="history-btn">
-            📜 Ver Historial Comparativo
+            Ver Historial Comparativo
         </button>
       </div>
 
@@ -134,7 +164,7 @@ export default function MetricsView({ onViewHistory }) {
         
         <div className="kpi-card">
             <div className="kpi-title">Pólizas {currentStats.monthName}</div>
-            <div className="kpi-value">📄 {currentStats.count}</div>
+            <div className="kpi-value">{currentStats.count}</div>
             <div className="kpi-subtitle">Cerradas este mes</div>
         </div>
 
@@ -152,7 +182,7 @@ export default function MetricsView({ onViewHistory }) {
         {/* 2. GRÁFICA DE BARRAS */}
         <div className="chart-card">
             <div className="chart-header">
-                <h3 className="chart-title">💰 Historial Anual</h3>
+                <h3 className="chart-title">Historial Anual</h3>
                 <p className="chart-subtitle">Tendencia de ventas mes a mes.</p>
             </div>
             <div className="chart-wrapper">
@@ -163,17 +193,17 @@ export default function MetricsView({ onViewHistory }) {
                         <YAxis />
                         <Tooltip formatter={(value) => money(value)} />
                         <Legend />
-                        <Bar dataKey="total" name="Prima Total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="neta" name="Utilidad Neta" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="total" name="Prima Total" fill="#003786" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="neta" name="Utilidad Neta" fill="#166be5" radius={[4, 4, 0, 0]} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
         </div>
 
-        {/* 3. GRÁFICA DE PASTEL */}
+        {/* 3. GRÁFICA DE PASTEL (ACTUALIZADA CON COLORES) */}
         <div className="chart-card">
             <div className="chart-header">
-                <h3 className="chart-title">🏢 Share: {currentStats.monthName}</h3>
+                <h3 className="chart-title">Participación por Aseguradora: {currentStats.monthName}</h3>
                 <p className="chart-subtitle">Participación de mercado actual.</p>
             </div>
             
@@ -185,8 +215,19 @@ export default function MetricsView({ onViewHistory }) {
                 <div className="chart-wrapper">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                            <Pie data={currentMonthPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
-                                {currentMonthPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                            <Pie 
+                                data={currentMonthPieData} 
+                                cx="50%" 
+                                cy="50%" 
+                                innerRadius={60} 
+                                outerRadius={100} 
+                                paddingAngle={5} 
+                                dataKey="value"
+                            >
+                                {/* Mapping colors based on entry name */}
+                                {currentMonthPieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={INSURER_COLORS[entry.name] || INSURER_COLORS['default']} />
+                                ))}
                             </Pie>
                             <Tooltip formatter={(value) => money(value)} />
                             <Legend />
@@ -200,7 +241,7 @@ export default function MetricsView({ onViewHistory }) {
       {/* --- DEMOGRAFÍA --- */}
       <div className="demographics-section">
           <div className="section-header">
-             <h3 className="section-title">👥 Perfil Demográfico</h3>
+             <h3 className="section-title">Perfil Demográfico</h3>
              <p className="section-subtitle">Edad promedio de la cartera de clientes.</p>
           </div>
 
@@ -259,7 +300,7 @@ export default function MetricsView({ onViewHistory }) {
       {/* 4. FILTRO DETALLADO POR ASEGURADORA */}
       <div className="chart-card" style={{minHeight:'auto'}}>
          <div className="filter-header">
-            <h3 className="chart-title">📊 Detalle por Aseguradora (Histórico)</h3>
+            <h3 className="chart-title">Detalle por Aseguradora (Histórico)</h3>
             <select 
                 value={selectedInsurer} 
                 onChange={(e) => setSelectedInsurer(e.target.value)}
@@ -286,15 +327,15 @@ export default function MetricsView({ onViewHistory }) {
                         <AreaChart data={currentInsurerData.chartData}>
                             <defs>
                                 <linearGradient id="colorVenta" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                                    <stop offset="5%" stopColor={INSURER_COLORS[selectedInsurer] || '#003786'} stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor={INSURER_COLORS[selectedInsurer] || '#166be5'} stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="mes" />
                             <YAxis />
                             <Tooltip formatter={(value) => money(value)} />
-                            <Area type="monotone" dataKey="venta" stroke="#8884d8" fillOpacity={1} fill="url(#colorVenta)" />
+                            <Area type="monotone" dataKey="venta" stroke={INSURER_COLORS[selectedInsurer] || '#166be5'} fillOpacity={1} fill="url(#colorVenta)" />
                         </AreaChart>
                     </ResponsiveContainer>
                  </div>
