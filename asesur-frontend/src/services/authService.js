@@ -1,4 +1,5 @@
-const API_URL = 'https://asesur-platform.onrender.com/api' // Tu Backend
+// ✅ Apuntamos al servidor de Render en la nube
+const API_URL = 'https://asesur-platform.onrender.com/api' 
 
 export const authService = {
   
@@ -12,12 +13,12 @@ export const authService = {
     const data = await response.json()
     if (!response.ok) throw new Error(data.error)
     
-    // Guardamos la sesión en LocalStorage para que no se cierre al recargar
     localStorage.setItem('user_session', JSON.stringify(data))
     return data
   },
 
   async register(email, password, nombre, rol) {
+    // Ahora sí enviará los datos a Render
     const response = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -31,10 +32,9 @@ export const authService = {
 
   logout() {
     localStorage.removeItem('user_session')
-    window.location.href = '/' // Redirigir al login
+    window.location.href = '/' 
   },
 
-  // Recuperar sesión guardada
   getCurrentUser() {
     return JSON.parse(localStorage.getItem('user_session'))
   }
