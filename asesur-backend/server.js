@@ -1,8 +1,8 @@
 require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
-const helmet = require('helmet') // <--- 1. IMPORTAR HELMET
-const rateLimit = require('express-rate-limit') // <--- 2. IMPORTAR RATE LIMIT
+const helmet = require('helmet') 
+const rateLimit = require('express-rate-limit') 
 
 const authRoutes = require('./src/routes/authRoutes')
 const clientRoutes = require('./src/routes/clientRoutes')
@@ -13,30 +13,31 @@ const notificationRoutes = require('./src/routes/notificationRoutes')
 const { initCronJob } = require('./src/controllers/notificationController')
 
 const app = express()
-const PORT = 3000
+// MEJORA: Render te da un puerto en process.env.PORT, úsalo si existe.
+const PORT = process.env.PORT || 3000 
 
-// --- CAPA DE SEGURIDAD 1: CABECERAS HTTP (HELMET) ---
-// Esto oculta que usas Express y protege contra ataques XSS y Sniffing
+// --- CAPA DE SEGURIDAD 1: CABECERAS HTTP ---
 app.use(helmet())
 
-// --- CAPA DE SEGURIDAD 2: RATE LIMITING (FUERZA BRUTA) ---
-// Si una IP hace más de 100 peticiones en 15 minutos, la bloqueamos.
+// --- CAPA DE SEGURIDAD 2: RATE LIMITING ---
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 peticiones por IP
-  message: '⛔ Demasiados intentos desde esta IP, por favor intenta de nuevo en 15 minutos.'
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  message: '⛔ Demasiados intentos, intenta de nuevo en 15 minutos.'
 })
-app.use(limiter) // Aplicar a todas las rutas
+app.use(limiter) 
 
-// --- CAPA DE SEGURIDAD 3: CORS RESTRICTIVO ---
-// Solo permitimos que TU Frontend hable con el Backend. Nadie más.
+// --- CAPA DE SEGURIDAD 3: CORS (ACTUALIZADO) ---
 app.use(cors({
-  origin: 'http://localhost:5173', // <--- CAMBIA ESTO AL DOMINIO REAL CUANDO SUBAS A PRODUCCIÓN
+  origin: [
+    'http://localhost:5173',               // Tu entorno local
+    'https://FernandoReyes04.github.io'    // Tu entorno en Producción (GitHub Pages)
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
-app.use(express.json()) // Protección básica contra payloads gigantes
+app.use(express.json()) 
 
 // RUTAS
 app.use('/api', authRoutes)
@@ -51,5 +52,5 @@ app.use('/api/config', require('./src/routes/configRoutes'))
 initCronJob()
 
 app.listen(PORT, () => {
-  console.log(`🛡️ Servidor BLINDADO corriendo en http://localhost:${PORT}`)
+  console.log(`🛡️ Servidor BLINDADO corriendo en el puerto ${PORT}`)
 })
