@@ -1,3 +1,4 @@
+// UBICACIÓN: asesur-backend/server.js
 require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
@@ -13,13 +14,14 @@ const notificationRoutes = require('./src/routes/notificationRoutes')
 const { initCronJob } = require('./src/controllers/notificationController')
 
 const app = express()
-// MEJORA: Render te da un puerto en process.env.PORT, úsalo si existe.
+// Render asigna un puerto dinámico, usamos process.env.PORT
 const PORT = process.env.PORT || 3000 
 
 // --- CAPA DE SEGURIDAD 1: CABECERAS HTTP ---
 app.use(helmet())
 
 // --- CAPA DE SEGURIDAD 2: RATE LIMITING ---
+// Evita ataques de fuerza bruta (100 peticiones por 15 min)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 100, 
@@ -27,15 +29,10 @@ const limiter = rateLimit({
 })
 app.use(limiter) 
 
-// --- CAPA DE SEGURIDAD 3: CORS (ACTUALIZADO) ---
-app.use(cors({
-  origin: [
-    'http://localhost:5173',               // Tu entorno local
-    'https://FernandoReyes04.github.io'    // Tu entorno en Producción (GitHub Pages)
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}))
+// --- CAPA DE SEGURIDAD 3: CORS (UNIVERSAL / ABIERTO) ---
+// ⚠️ CAMBIO CRÍTICO: Dejamos cors() vacío para permitir TODAS las conexiones.
+// Esto soluciona inmediatamente el error "Access-Control-Allow-Origin" en GitHub Pages.
+app.use(cors()) 
 
 app.use(express.json()) 
 
@@ -48,9 +45,9 @@ app.use('/api/metricas', metricsRoutes)
 app.use('/api/notificaciones', notificationRoutes)
 app.use('/api/config', require('./src/routes/configRoutes'))
 
-// Iniciar el reloj
+// Iniciar el reloj de notificaciones
 initCronJob()
 
 app.listen(PORT, () => {
-  console.log(`🛡️ Servidor BLINDADO corriendo en el puerto ${PORT}`)
+  console.log(`🛡️ Servidor corriendo en el puerto ${PORT} (CORS Abierto)`)
 })
