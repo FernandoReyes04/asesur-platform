@@ -50,7 +50,7 @@ export default function PolicyForm() {
       
       const payload = { ...policyData, prima_neta: cleanPrimaNeta, prima_total: cleanPrimaTotal, cliente_id: selectedClient.id }
 
-      const res = await fetch('/api/polizas', {
+      const res = await fetch('https://asesur-platform.onrender.com/api/polizas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       })
       if (!res.ok) throw new Error("Error registrando")

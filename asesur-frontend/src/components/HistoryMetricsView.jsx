@@ -32,7 +32,7 @@ export default function HistoryMetricsView({ onBack }) {
   }
 
   useEffect(() => {
-    fetch('/api/metricas')
+    fetch('https://asesur-platform.onrender.com/api/metricas')
       .then(res => res.json())
       .then(data => {
         setMetrics(data)

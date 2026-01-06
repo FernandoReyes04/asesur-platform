@@ -19,7 +19,7 @@ export default function RenewalsView() {
   const [filterStatus, setFilterStatus] = useState('Todos')
 
   useEffect(() => {
-    fetch('/api/polizas/renovaciones') // Asegúrate que la ruta en tu router coincida
+    fetch('https://asesur-platform.onrender.com/api/polizas/renovaciones') // Asegúrate que la ruta en tu router coincida
       .then(res => res.json())
       .then(result => {
         // Mapeamos los estados basados en lo que envía el backend

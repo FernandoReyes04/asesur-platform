@@ -13,7 +13,7 @@ export default function NotificationsView() {
   const [filterStatus, setFilterStatus] = useState('Todos')
 
   useEffect(() => {
-    fetch('/api/notificaciones')
+    fetch('https://asesur-platform.onrender.com/api/notificaciones')
       .then(res => res.json())
       .then(result => {
         const overdue = (result.overdue || []).map(i => ({ ...i, status: 'Vencido' }))

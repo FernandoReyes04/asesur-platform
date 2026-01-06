@@ -53,7 +53,7 @@ export default function DashboardHome({ userName }) {
         const todayStr = today.toISOString().split('T')[0]
         
         // 0. LOAD CONFIGURATION (Email & Time)
-        fetch('/api/config/email')
+        fetch('https://asesur-platform.onrender.com/api/config/email')
             .then(res => res.json())
             .then(data => {
                 setConfigEmail(data.email || 'No configurado')
@@ -94,7 +94,7 @@ export default function DashboardHome({ userName }) {
           .limit(5)
 
         // 3. SALES
-        const resMetrics = await fetch('/api/metricas')
+        const resMetrics = await fetch('https://asesur-platform.onrender.com/api/metricas')
         const metricsData = await resMetrics.json()
         let chartData = []
         if(metricsData && metricsData.insurerDetailed) {
@@ -152,7 +152,7 @@ export default function DashboardHome({ userName }) {
 
   const handleSaveConfig = async () => {
       try {
-          const res = await fetch('/api/config/email', {
+          const res = await fetch('https://asesur-platform.onrender.com/api/config/email', {
               method: 'PUT',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({ email: tempEmail, time: tempTime })

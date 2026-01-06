@@ -29,7 +29,7 @@ export default function MetricsView({ onViewHistory }) {
 
   useEffect(() => {
     // 1. Carga Métricas
-    const fetchFinancials = fetch('/api/metricas')
+    const fetchFinancials = fetch('https://asesur-platform.onrender.com/api/metricas')
       .then(res => {
         if (!res.ok) throw new Error('Error conectando al servidor')
         return res.json()       

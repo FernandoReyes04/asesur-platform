@@ -8,7 +8,7 @@ export default function PolicyList() {
   // ... (fetchPoliciesData, handleRefresh, markAsPaid, markAsCancelled IGUALES) ...
   const fetchPoliciesData = async () => {
     try {
-        const res = await fetch('/api/polizas')
+        const res = await fetch('https://asesur-platform.onrender.com/api/polizas')
         const data = await res.json()
         return Array.isArray(data) ? data : []
     } catch (error) { console.error(error); return [] }
