@@ -89,7 +89,8 @@ function App() {
   const handleRegister = async (e) => {
     e.preventDefault(); 
     setRegLoading(true);
-    let rol = regData.wantsAdmin && regData.adminCode === MASTER_KEY ? 'admin' : 'empleado';
+    // ✅ CÓDIGO CORREGIDO (El que aceptará la base de datos)
+let rol = regData.wantsAdmin && regData.adminCode === MASTER_KEY ? 'admin' : 'user';
     
     try { 
       await authService.register(regData.email, regData.password, regData.nombre, rol); 
