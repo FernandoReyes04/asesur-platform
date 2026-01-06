@@ -11,19 +11,13 @@ export default function DashboardHome({ userName }) {
   const [pieData, setPieData] = useState([])
   const [team, setTeam] = useState([])
   
-  // --- CONFIGURATION WIDGET STATES ---
-  const [configEmail, setConfigEmail] = useState('')
-  const [configTime, setConfigTime] = useState('09:00') // Default time
-  
-  const [isEditingConfig, setIsEditingConfig] = useState(false)
-  const [authInput, setAuthInput] = useState('')
-  const [showAuth, setShowAuth] = useState(false)
-  
-  // Temp states for editing
-  const [tempEmail, setTempEmail] = useState('')
-  const [tempTime, setTempTime] = useState('')
-  
-  const MASTER_KEY = 'Asesur2026'
+  // --- ESTADOS PARA EL WIDGET DE CONFIGURACIÓN ---
+  const [configEmail, setConfigEmail] = useState('') // El correo actual
+  const [isEditingEmail, setIsEditingEmail] = useState(false) // ¿Está editando?
+  const [authInput, setAuthInput] = useState('') // Input de la contraseña
+  const [showAuth, setShowAuth] = useState(false) // ¿Mostrar input de contraseña?
+  const [tempEmail, setTempEmail] = useState('') // Input del nuevo correo
+  const MASTER_KEY = 'Asesur2026' // <--- CLAVE MAESTRA
 
   const [exchangeRates, setExchangeRates] = useState({ 
       usd: { today: 0, yesterday: 0 }, 
@@ -52,16 +46,13 @@ export default function DashboardHome({ userName }) {
         const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
         const todayStr = today.toISOString().split('T')[0]
         
-        // 0. LOAD CONFIGURATION (Email & Time)
+        // 0. CARGAR CORREO DE CONFIGURACIÓN (Backend)
         fetch('https://asesur-platform.onrender.com/api/config/email')
             .then(res => res.json())
-            .then(data => {
-                setConfigEmail(data.email || 'No configurado')
-                setConfigTime(data.time || '09:00')
-            })
-            .catch(err => console.error("Error loading config:", err))
+            .then(data => setConfigEmail(data.email || 'No configurado'))
+            .catch(err => console.error("Error cargando config:", err))
 
-        // 1. FINANCIALS
+        // 1. FINANZAS
         const fetchFinancials = async () => {
             try {
                 const resUsd = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -72,14 +63,13 @@ export default function DashboardHome({ userName }) {
                     usd: { today: usdToday.toFixed(2), yesterday: (usdToday - 0.08).toFixed(2) },
                     udi: { today: udiBase.toFixed(4), yesterday: (udiBase - 0.0004).toFixed(4) }
                 }
-            } catch (e) {
-                console.error("Financial error:", e);
-                return { usd: { today: 17.95, yesterday: 17.88 }, udi: { today: 8.6672, yesterday: 8.6668 } }
-            }
+            } catch {
+    console.error("Error al guardar");
+}
         };
         const ratesData = await fetchFinancials();
 
-        // 2. URGENT REMINDERS
+        // 2. COBRANZA
         const limitDate = new Date()
         limitDate.setDate(limitDate.getDate() + 15)
         const limitStr = limitDate.toISOString().split('T')[0]
@@ -93,7 +83,7 @@ export default function DashboardHome({ userName }) {
           .order('recibo_inicio', { ascending: true })
           .limit(5)
 
-        // 3. SALES
+        // 3. VENTAS
         const resMetrics = await fetch('https://asesur-platform.onrender.com/api/metricas')
         const metricsData = await resMetrics.json()
         let chartData = []
@@ -104,10 +94,10 @@ export default function DashboardHome({ userName }) {
             })).filter(i => i.value > 0)
         }
 
-        // 4. TEAM
+        // 4. EQUIPO
         const { data: profiles } = await supabase.from('profiles').select('id, nombre, email, rol').order('nombre', { ascending: true })
 
-        // 5. BIRTHDAYS
+        // 5. CUMPLEAÑOS
         const { data: clients } = await supabase.from('clientes').select('nombre, apellido, fecha_nacimiento, telefono')
         
         const mesActualBirthdays = (clients || []).filter(c => {
@@ -128,7 +118,7 @@ export default function DashboardHome({ userName }) {
         setLoading(false)
 
       } catch (error) {
-        console.error("Dashboard error:", error)
+        console.error("Error dashboard:", error)
         setLoading(false)
       }
     }
@@ -137,12 +127,11 @@ export default function DashboardHome({ userName }) {
 
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : 'U'
 
-  // --- CONFIG WIDGET LOGIC ---
+  // --- LÓGICA DEL WIDGET DE CORREO ---
   const handleUnlock = () => {
       if(authInput === MASTER_KEY) {
-          setIsEditingConfig(true)
+          setIsEditingEmail(true)
           setTempEmail(configEmail)
-          setTempTime(configTime) // Load current time into temp
           setShowAuth(false)
           setAuthInput('')
       } else {
@@ -150,27 +139,21 @@ export default function DashboardHome({ userName }) {
       }
   }
 
-  const handleSaveConfig = async () => {
+  const handleSaveEmail = async () => {
       try {
           const res = await fetch('https://asesur-platform.onrender.com/api/config/email', {
               method: 'PUT',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ email: tempEmail, time: tempTime })
+              body: JSON.stringify({ email: tempEmail })
           })
-          
           if(res.ok) {
               setConfigEmail(tempEmail)
-              setConfigTime(tempTime)
-              setIsEditingConfig(false)
-              alert("✅ Configuración actualizada. Se envió un correo de verificación.")
+              setIsEditingEmail(false)
+              alert("✅ Correo de notificaciones actualizado")
           } else {
-              const errData = await res.json()
-              alert("Error al guardar: " + (errData.error || "Desconocido"))
+              alert("Error al guardar")
           }
-      } catch(e) { 
-          console.error("Save error:", e)
-          alert("Error de conexión al guardar")
-      }
+      } catch(e) { console.error(e) }
   }
 
   if (loading) {
@@ -192,7 +175,7 @@ export default function DashboardHome({ userName }) {
 
       <div className="dashboard-grid">
         
-        {/* 1. EXCHANGE RATES */}
+        {/* 1. TIPO DE CAMBIO */}
         <div className="dashboard-card">
             <h3 className="card-title">Tipo de cambio</h3>
             <div className="table-container">
@@ -217,7 +200,7 @@ export default function DashboardHome({ userName }) {
             <p className="card-footer-note">* Fuente: Open Exchange & Banxico (Oficial)</p>
         </div>
 
-        {/* 2. URGENT REMINDERS */}
+        {/* 2. COBRANZA RÁPIDA */}
         <div className="dashboard-card">
             <h3 className="card-title">Cobranza Urgente (15 días)</h3>
             {reminders.length === 0 ? (
@@ -244,7 +227,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 3. MONTHLY SALES */}
+        {/* 3. VENTAS DEL MES (COLORES ACTUALIZADOS) */}
         <div className="dashboard-card">
             <h3 className="card-title">Ventas del Mes Actual</h3>
             {pieData.length === 0 ? (
@@ -268,7 +251,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 4. TEAM */}
+        {/* 4. EQUIPO DE TRABAJO */}
         <div className="dashboard-card">
             <h3 className="card-title">Equipo de Trabajo</h3>
             {team.length === 0 ? (
@@ -288,7 +271,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 5. BIRTHDAYS */}
+        {/* 5. CUMPLEAÑOS */}
         <div className="dashboard-card">
             <h3 className="card-title">Cumpleaños del Mes</h3>
             {birthdays.length === 0 ? (
@@ -313,31 +296,30 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 6. CONFIGURATION WIDGET (UPDATED) */}
+        {/* 6. WIDGET DE NOTIFICACIONES (NUEVO) */}
         <div className="dashboard-card" style={{borderLeft: '4px solid #F37021'}}>
             <h3 className="card-title">Notificaciones Automáticas</h3>
             <p style={{fontSize:'12px', color:'#64748b', marginBottom:'10px'}}>
-               Reporte diario de renovaciones y cobranza.
+               Reporte diario de renovaciones (09:00 AM).
             </p>
 
-            {/* NORMAL VIEW */}
-            {!isEditingConfig && !showAuth && (
+            {/* VISTA NORMAL */}
+            {!isEditingEmail && !showAuth && (
                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                    <div style={{background:'#f1f5f9', padding:'10px', borderRadius:'6px', color:'#334155', fontSize:'13px'}}>
-                       <div style={{marginBottom:'5px'}}>📩 <strong>{configEmail}</strong></div>
-                       <div>⏰ Hora de envío: <strong>{configTime} hrs</strong></div>
+                    <div style={{background:'#f1f5f9', padding:'10px', borderRadius:'6px', color:'#334155', fontWeight:'500', fontSize:'13px', wordBreak:'break-all'}}>
+                       📩 Enviar a: <br/> <span style={{color:'#0f172a', fontWeight:'bold'}}>{configEmail}</span>
                     </div>
                     <button 
                         onClick={() => setShowAuth(true)}
                         style={{background:'#0f172a', color:'white', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer', fontSize:'12px'}}
                     >
-                        Configurar
+                        Cambiar Correo
                     </button>
                 </div>
             )}
 
-            {/* AUTH VIEW */}
-            {showAuth && !isEditingConfig && (
+            {/* VISTA DE CONTRASEÑA */}
+            {showAuth && !isEditingEmail && (
                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
                     <input 
                         type="password" 
@@ -353,33 +335,19 @@ export default function DashboardHome({ userName }) {
                 </div>
             )}
 
-            {/* EDIT VIEW */}
-            {isEditingConfig && (
+            {/* VISTA DE EDICIÓN */}
+            {isEditingEmail && (
                  <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                    <div>
-                        <label style={{fontSize:'11px', fontWeight:'bold', color:'#64748b'}}>Correo Destino:</label>
-                        <input 
-                            type="email" 
-                            value={tempEmail} 
-                            onChange={e => setTempEmail(e.target.value)}
-                            placeholder="ejemplo@asesur.com"
-                            style={{padding:'8px', borderRadius:'4px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box', marginTop:'2px'}}
-                        />
-                    </div>
-                    
-                    <div>
-                        <label style={{fontSize:'11px', fontWeight:'bold', color:'#64748b'}}>Hora de Envío:</label>
-                        <input 
-                            type="time" 
-                            value={tempTime} 
-                            onChange={e => setTempTime(e.target.value)}
-                            style={{padding:'8px', borderRadius:'4px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box', marginTop:'2px'}}
-                        />
-                    </div>
-
-                    <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
-                        <button onClick={handleSaveConfig} style={{flex:1, background:'#166534', color:'white', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Guardar y Verificar</button>
-                        <button onClick={() => setIsEditingConfig(false)} style={{background:'#ccc', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Cancelar</button>
+                    <input 
+                        type="email" 
+                        value={tempEmail} 
+                        onChange={e => setTempEmail(e.target.value)}
+                        placeholder="Nuevo correo..."
+                        style={{padding:'8px', borderRadius:'4px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box'}}
+                    />
+                    <div style={{display:'flex', gap:'5px'}}>
+                        <button onClick={handleSaveEmail} style={{flex:1, background:'#166534', color:'white', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Guardar</button>
+                        <button onClick={() => setIsEditingEmail(false)} style={{background:'#ccc', border:'none', padding:'8px', borderRadius:'4px', cursor:'pointer'}}>Cancelar</button>
                     </div>
                 </div>
             )}

@@ -24,12 +24,12 @@ export default function PolicyList() {
 
   const markAsPaid = async (id) => {
       if(!confirm("¿Confirmar PAGO?")) return
-      try { await fetch(`/api/polizas/${id}/pagar`, { method: 'PUT' }); handleRefresh() } catch (e) { alert(e.message) }
+      try { await fetch(`https://asesur-platform.onrender.com/api/polizas/${id}/pagar`, { method: 'PUT' }); handleRefresh() } catch (e) { alert(e.message) }
   }
   
   const markAsCancelled = async (id) => {
       if(!confirm("¿Confirmar CANCELACIÓN?")) return
-      try { await fetch(`/api/polizas/${id}/cancelar`, { method: 'PUT' }); handleRefresh() } catch (e) { alert(e.message) }
+      try { await fetch(`https://asesur-platform.onrender.com/api/polizas/${id}/cancelar`, { method: 'PUT' }); handleRefresh() } catch (e) { alert(e.message) }
   }
 
   // --- LÓGICA VISUAL ---

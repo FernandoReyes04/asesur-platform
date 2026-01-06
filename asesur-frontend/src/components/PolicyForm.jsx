@@ -36,7 +36,7 @@ export default function PolicyForm() {
   // --- API ---
   const handleSearch = async (term) => {
     setSearchTerm(term); if (term.length < 3) return
-    try { const res = await fetch(`/api/clientes/search?q=${term}`); const data = await res.json(); setClientsList(data) } catch (e) { console.error(e) }
+    try { const res = await fetch(`https://asesur-platform.onrender.com/api/clientes/search?q=${term}`); const data = await res.json(); setClientsList(data) } catch (e) { console.error(e) }
   }
   const handleSelectClient = (c) => { setSelectedClient(c); setClientsList([]); setSearchTerm('') }
 

@@ -17,7 +17,7 @@ export default function RecordsView() {
     setSearchTerm(term)
     setLoading(true)
     try {
-      const response = await fetch(`/api/registros/search?q=${term}`)
+      const response = await fetch(`https://asesur-platform.onrender.com/api/registros/search?q=${term}`)
       const data = await response.json()
       setResults(data)
       setExpandedClientId(null) 
@@ -36,7 +36,7 @@ export default function RecordsView() {
 
   const handleSaveChanges = async () => {
     try {
-      const response = await fetch(`/api/polizas/${selectedRecord.poliza.id}`, {
+      const response = await fetch(`https://asesur-platform.onrender.com/api/polizas/${selectedRecord.poliza.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editFormData)
