@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
-import '../styles/ClientManagement.css' // <--- IMPORTAMOS CSS
+import '../styles/ClientManagement.css' 
 
 export default function ClientManagement({ user }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -37,6 +37,15 @@ export default function ClientManagement({ user }) {
       const data = await response.json()
       setClientsList(data)
     } catch (error) { console.error(error) }
+  }
+
+  // --- FUNCIÓN DE LIMPIEZA DE NOMBRES (La clave anti-errores) ---
+  const sanitizeFileName = (name) => {
+    return name
+      .normalize("NFD") // Descompone acentos
+      .replace(/[\u0300-\u036f]/g, "") // Elimina acentos
+      .replace(/[^a-zA-Z0-9._-]/g, "_") // Reemplaza espacios y símbolos por guión bajo
+      .toLowerCase(); // Todo a minúsculas
   }
 
   const handleSelectClient = (c) => {
@@ -78,14 +87,34 @@ export default function ClientManagement({ user }) {
     setLoading(true)
     try {
       let publicUrl = formData.ine_url_existente
+      
+      // LÓGICA DE SUBIDA DE ARCHIVO
       if (formData.archivo) {
-        const fileName = `${Date.now()}-${formData.archivo.name.replace(/\s/g, '_')}`
-        const { error: uploadError } = await supabase.storage.from('documentos_clientes').upload(fileName, formData.archivo)
+        // 1. Limpiamos el nombre usando la función segura
+        const cleanName = sanitizeFileName(formData.archivo.name)
+        // 2. Creamos nombre único
+        const fileName = `${Date.now()}_${cleanName}`
+        
+        // 3. Subimos a Supabase
+        // NOTA: Asegúrate que tu bucket se llame 'documentos_clientes' o 'ines' según lo creaste en Supabase.
+        // En tu código anterior usabas 'documentos_clientes', así que lo dejé así.
+        const { error: uploadError } = await supabase.storage
+            .from('documentos_clientes') 
+            .upload(fileName, formData.archivo)
+        
         if (uploadError) throw uploadError
-        const { data: urlData } = supabase.storage.from('documentos_clientes').getPublicUrl(fileName)
+
+        // 4. Obtenemos URL
+        const { data: urlData } = supabase.storage
+            .from('documentos_clientes')
+            .getPublicUrl(fileName)
+            
         publicUrl = urlData.publicUrl
       } else {
-        if (!selectedClient && !formData.archivo) throw new Error("⚠️ Sube el INE para registros nuevos.")
+        if (!selectedClient && !formData.archivo) {
+            // Opcional: Si quieres permitir registrar sin INE, borra esta línea
+            // throw new Error("⚠️ Sube el INE para registros nuevos.") 
+        }
       }
 
       const payload = { ...formData, ine_url: publicUrl, agente_id: user.id || user.user?.id }
@@ -104,7 +133,12 @@ export default function ClientManagement({ user }) {
       alert("✅ Datos guardados correctamente")
       handleReset()
       fetchClients(searchTerm) 
-    } catch (error) { alert("Error: " + error.message) } finally { setLoading(false) }
+    } catch (error) { 
+        console.error(error)
+        alert("Error: " + error.message) 
+    } finally { 
+        setLoading(false) 
+    }
   }
 
   const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); if(e.type==="dragenter"||e.type==="dragover")setDragActive(true);else if(e.type==="dragleave")setDragActive(false); }
@@ -159,9 +193,17 @@ export default function ClientManagement({ user }) {
             className={`dropzone ${dragActive ? 'active' : ''}`}
             onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
           >
-            <input type="file" accept="image/*, application/pdf" onChange={(e) => e.target.files[0] && setFormData({...formData, archivo: e.target.files[0]})} className="file-input-hidden" />
+            {/* Aceptamos imágenes y PDF */}
+            <input 
+                type="file" 
+                accept="image/*, application/pdf" 
+                onChange={(e) => e.target.files[0] && setFormData({...formData, archivo: e.target.files[0]})} 
+                className="file-input-hidden" 
+            />
             <div className="upload-icon">📂</div>
-            <div className="upload-text">{formData.archivo ? formData.archivo.name : (selectedClient ? 'Arrastra para cambiar INE' : 'Sube el INE aquí')}</div>
+            <div className="upload-text">
+                {formData.archivo ? formData.archivo.name : (selectedClient ? 'Arrastra para cambiar INE' : 'Sube INE o PDF aquí')}
+            </div>
           </div>
 
           <button disabled={loading} className={`submit-btn ${selectedClient ? 'btn-update' : 'btn-create'}`}>

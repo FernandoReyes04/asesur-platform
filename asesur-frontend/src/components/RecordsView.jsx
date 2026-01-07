@@ -28,6 +28,36 @@ export default function RecordsView() {
       setExpandedClientId(expandedClientId === clientId ? null : clientId)
   }
 
+  // --- NUEVA FUNCIÓN: ELIMINAR PÓLIZA ---
+  const handleDeletePolicy = async (policyId) => {
+    // 1. Preguntamos confirmación para evitar accidentes
+    const confirmDelete = window.confirm(
+        "⚠️ ¿Estás seguro de que quieres ELIMINAR esta póliza?\n\nEsta acción la borrará permanentemente de la base de datos y NO se puede deshacer."
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setLoading(true);
+      // 2. Enviamos la orden de borrado al backend
+      const response = await fetch(`https://asesur-platform.onrender.com/api/polizas/${policyId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error("No se pudo eliminar la póliza. Intenta de nuevo.");
+
+      alert("🗑️ Póliza eliminada correctamente.");
+      
+      // 3. Refrescamos la lista para que desaparezca visualmente
+      handleSearch(searchTerm);
+
+    } catch (error) {
+      alert("❌ Error: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const openModal = (poliza, cliente) => {
     setSelectedRecord({ poliza, cliente })
     setIsEditing(false) 
@@ -64,7 +94,7 @@ export default function RecordsView() {
     switch (estado) {
         case 'pagado': return { bg: '#dcfce7', text: '#166534' } 
         case 'vencido': return { bg: '#fee2e2', text: '#991b1b' } 
-        case 'cancelada': return { bg: '#f3f4f6', text: '#6b7280' } // Estilo para cancelada
+        case 'cancelada': return { bg: '#f3f4f6', text: '#6b7280' } 
         default: return { bg: '#fef9c3', text: '#854d0e' } 
     }
   }
@@ -125,7 +155,7 @@ export default function RecordsView() {
                                 <tr>
                                     <th>No. Póliza</th>
                                     <th>Aseguradora</th>
-                                    <th>Tipo</th> {/* Nuevo Header */}
+                                    <th>Tipo</th> 
                                     <th>Vigencia</th>
                                     <th>Total</th>
                                     <th>Estado</th>
@@ -139,7 +169,7 @@ export default function RecordsView() {
                                     <tr key={p.id}>
                                     <td className="policy-number">{p.numero_poliza}</td>
                                     <td>{p.aseguradora}</td>
-                                    <td style={{fontSize:'12px', color:'#64748b'}}>{p.tipo_poliza || '-'}</td> {/* Nueva Celda */}
+                                    <td style={{fontSize:'12px', color:'#64748b'}}>{p.tipo_poliza || '-'}</td>
                                     <td className="date-range">
                                         <div className="date-start">Del: {p.recibo_inicio}</div>
                                         <div className="date-end">Al: {p.recibo_fin}</div>
@@ -151,9 +181,28 @@ export default function RecordsView() {
                                         </span>
                                     </td>
                                     <td style={{ textAlign:'right' }}>
-                                        <button onClick={(e) => { e.stopPropagation(); openModal(p, cliente); }} className="view-btn">
-                                            👁️ Ver Detalle
-                                        </button>
+                                        {/* CONTENEDOR DE BOTONES (VER + ELIMINAR) */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
+                                            <button onClick={(e) => { e.stopPropagation(); openModal(p, cliente); }} className="view-btn">
+                                                👁️ Ver Detalle
+                                            </button>
+                                            
+                                            {/* 👇 NUEVO BOTÓN DE ELIMINAR 👇 */}
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleDeletePolicy(p.id); }} 
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: '#ef4444', // Rojo
+                                                    fontSize: '11px',
+                                                    cursor: 'pointer',
+                                                    textDecoration: 'underline',
+                                                    padding: '2px'
+                                                }}
+                                            >
+                                                Eliminar
+                                            </button>
+                                        </div>
                                     </td>
                                     </tr>
                                 )
@@ -169,7 +218,7 @@ export default function RecordsView() {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* MODAL DETALLE */}
       {selectedRecord && (
         <div className="modal-overlay" onClick={() => setSelectedRecord(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -222,6 +271,34 @@ export default function RecordsView() {
                     <span className="info-label">Fecha Nacimiento</span>
                     <div className="info-value">{formatDate(selectedRecord.cliente.fecha_nacimiento)}</div>
                   </div>
+
+                  <div>
+                    <span className="info-label">Documentación</span>
+                    {selectedRecord.cliente.ine_url ? (
+                        <a 
+                            href={selectedRecord.cliente.ine_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'inline-block',
+                                marginTop: '3px',
+                                fontSize: '12px',
+                                color: 'white',
+                                textDecoration: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                background: '#3b82f6',
+                                fontWeight: 'bold',
+                                boxShadow: '0 2px 5px rgba(59, 130, 246, 0.3)'
+                            }}
+                        >
+                            Ver INE
+                        </a>
+                    ) : (
+                        <span style={{fontSize:'12px', color:'#94a3b8', fontStyle:'italic'}}>No hay INE adjunta</span>
+                    )}
+                  </div>
+
                 </div>
               </div>
 
