@@ -39,13 +39,13 @@ export default function ClientManagement({ user }) {
     } catch (error) { console.error(error) }
   }
 
-  // --- FUNCIÓN DE LIMPIEZA DE NOMBRES (La clave anti-errores) ---
+  // --- FUNCIÓN DE LIMPIEZA DE NOMBRES ---
   const sanitizeFileName = (name) => {
     return name
-      .normalize("NFD") // Descompone acentos
-      .replace(/[\u0300-\u036f]/g, "") // Elimina acentos
-      .replace(/[^a-zA-Z0-9._-]/g, "_") // Reemplaza espacios y símbolos por guión bajo
-      .toLowerCase(); // Todo a minúsculas
+      .normalize("NFD") 
+      .replace(/[\u0300-\u036f]/g, "") 
+      .replace(/[^a-zA-Z0-9._-]/g, "_") 
+      .toLowerCase(); 
   }
 
   const handleSelectClient = (c) => {
@@ -90,21 +90,15 @@ export default function ClientManagement({ user }) {
       
       // LÓGICA DE SUBIDA DE ARCHIVO
       if (formData.archivo) {
-        // 1. Limpiamos el nombre usando la función segura
         const cleanName = sanitizeFileName(formData.archivo.name)
-        // 2. Creamos nombre único
         const fileName = `${Date.now()}_${cleanName}`
         
-        // 3. Subimos a Supabase
-        // NOTA: Asegúrate que tu bucket se llame 'documentos_clientes' o 'ines' según lo creaste en Supabase.
-        // En tu código anterior usabas 'documentos_clientes', así que lo dejé así.
         const { error: uploadError } = await supabase.storage
             .from('documentos_clientes') 
             .upload(fileName, formData.archivo)
         
         if (uploadError) throw uploadError
 
-        // 4. Obtenemos URL
         const { data: urlData } = supabase.storage
             .from('documentos_clientes')
             .getPublicUrl(fileName)
@@ -112,8 +106,7 @@ export default function ClientManagement({ user }) {
         publicUrl = urlData.publicUrl
       } else {
         if (!selectedClient && !formData.archivo) {
-            // Opcional: Si quieres permitir registrar sin INE, borra esta línea
-            // throw new Error("⚠️ Sube el INE para registros nuevos.") 
+             // Opcional: validación de archivo obligatorio
         }
       }
 
@@ -193,7 +186,6 @@ export default function ClientManagement({ user }) {
             className={`dropzone ${dragActive ? 'active' : ''}`}
             onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
           >
-            {/* Aceptamos imágenes y PDF */}
             <input 
                 type="file" 
                 accept="image/*, application/pdf" 
@@ -232,6 +224,30 @@ export default function ClientManagement({ user }) {
                   <div className="client-name">{c.nombre} {c.apellido}</div>
                   <div className="client-type">{c.tipo_persona}</div>
                   {c.telefono && <div className="client-phone">{c.telefono}</div>}
+                  
+                  {/* 👇 AQUÍ AGREGAMOS EL BOTÓN DE VER DOCUMENTO 👇 */}
+                  {c.ine_url && (
+                    <a 
+                        href={c.ine_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'inline-block',
+                            marginTop: '5px',
+                            fontSize: '11px',
+                            color: '#3b82f6',
+                            textDecoration: 'none',
+                            border: '1px solid #3b82f6',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: '#eff6ff'
+                        }}
+                    >
+                        Ver Documentación
+                    </a>
+                  )}
+                  {/* 👆 FIN DEL AGREGADO 👆 */}
+
                 </td>
                 <td className="client-rfc">{c.rfc || '---'}</td>
                 <td>{c.municipio || '---'}</td>
