@@ -4,7 +4,6 @@ import { authService } from './services/authService'
 import Dashboard from './components/Dashboard'
 import Login from './components/Login'
 import GridSpinner from './components/GridSpinner' 
-
 import './index.css'
 
 function App() {
@@ -18,56 +17,87 @@ function App() {
   const [regData, setRegData] = useState({ email: '', password: '', nombre: '', adminCode: '', wantsAdmin: false })
   const [regLoading, setRegLoading] = useState(false)
 
-  // --- NUEVO: ESTADO PARA EL CÓDIGO DE ACCESO ---
+  // ESTADO PARA EL CÓDIGO DE ACCESO
   const [accessCode, setAccessCode] = useState('')
-  const MASTER_KEY = 'Asesur2026' // <--- 🔐 CAMBIA ESTO POR TU CONTRASEÑA MAESTRA
+  const MASTER_KEY = 'Asesur2026' 
 
-  // --- 1. EFECTO DE PERSISTENCIA ---
+  // --- 1. EFECTO DE PERSISTENCIA BLINDADO ---
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    let mounted = true; // Evita actualizaciones si el componente se desmonta
 
+    // Función segura para obtener sesión
+    const getSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error; // Si hay error, salta al catch
+
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error de sesión:", error.message);
+        // SI HAY UN ERROR CRÍTICO, FORZAMOS EL CIERRE PARA LIMPIAR EL TOKEN MALO
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+          // Opcional: supabase.auth.signOut(); // Descomentar si el bucle persiste
+        }
+      }
+    };
+
+    getSession();
+
+    // Suscripción a cambios
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+      if (mounted) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    });
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // <--- LOS CORCHETES VACÍOS SON LA CLAVE (Correcto)
 
   // --- LOGOUT ---
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setView('login')
-    setAccessCode('') // Limpiamos el código al salir
+    setLoading(true); // Ponemos loading para evitar parpadeos
+    await supabase.auth.signOut();
+    setUser(null);
+    setView('login');
+    setAccessCode('');
+    setLoading(false);
   }
 
-  // --- NUEVO: VERIFICAR ACCESO ---
+  // --- VERIFICAR ACCESO ---
   const handleVerifyAccess = (e) => {
     e.preventDefault()
     if (accessCode === MASTER_KEY) {
-        setView('register') // ✅ Código correcto: Pasamos al registro
-        setAccessCode('')   // Limpiamos el campo por seguridad
+        setView('register') 
+        setAccessCode('')   
     } else {
-        alert("⛔ Código incorrecto. No tienes permiso para crear cuentas.")
+        alert("⛔ Código incorrecto.")
         setAccessCode('')
     }
   }
 
   // --- REGISTRO ---
   const handleRegister = async (e) => {
-    e.preventDefault(); setRegLoading(true);
-    // Nota: Como ya pasaron el filtro maestro, aquí definimos si quieren ser admin o empleado
+    e.preventDefault(); 
+    setRegLoading(true);
     let rol = regData.wantsAdmin && regData.adminCode === MASTER_KEY ? 'admin' : 'empleado';
     
     try { 
       await authService.register(regData.email, regData.password, regData.nombre, rol); 
-      alert("✅ Cuenta creada. Por favor inicia sesión."); 
+      alert("✅ Cuenta creada. Inicia sesión."); 
       setView('login'); 
-    } catch (error) { alert(error.message); }
+    } catch (error) { 
+      alert(error.message); 
+    }
     setRegLoading(false);
   }
 
@@ -80,7 +110,7 @@ function App() {
       }}>
          <GridSpinner /> 
          <div style={{color:'#ffffff', fontWeight: 'bold', fontFamily: 'sans-serif', letterSpacing: '1px'}}>
-            CARGANDO ASESUR...
+            CONECTANDO CON ASESUR...
          </div>
       </div>
     )
@@ -89,7 +119,7 @@ function App() {
   // 2. SI HAY USUARIO -> DASHBOARD
   if (user) return <Dashboard user={user} onLogout={handleLogout} />
 
-  // --- NUEVO: 3. VISTA DE VERIFICACIÓN (El Muro) ---
+  // 3. VISTA DE VERIFICACIÓN
   if (view === 'verify_access') {
       return (
         <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#003786'}}>
@@ -97,17 +127,17 @@ function App() {
              <div style={{fontSize:'40px', marginBottom:'10px'}}>🔒</div>
              <h2 style={{color:'#0f172a', marginBottom:'10px'}}>Acceso Restringido</h2>
              <p style={{color:'#64748b', fontSize:'14px', marginBottom:'20px'}}>
-                La creación de cuentas es exclusiva para administradores. Ingresa el código maestro.
+                Ingresa el código maestro para crear cuentas.
              </p>
              
              <form onSubmit={handleVerifyAccess}>
                 <input 
-                    type="password" 
-                    placeholder="Código Maestro" 
-                    value={accessCode} 
-                    onChange={e => setAccessCode(e.target.value)} 
-                    style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box', textAlign:'center', fontSize:'18px', letterSpacing:'2px'}} 
-                    autoFocus
+                   type="password" 
+                   placeholder="Código Maestro" 
+                   value={accessCode} 
+                   onChange={e => setAccessCode(e.target.value)} 
+                   style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box', textAlign:'center', fontSize:'18px', letterSpacing:'2px'}} 
+                   autoFocus
                 />
                 <button type="submit" style={{width:'100%', padding:'12px', background:'#0f172a', color:'white', border:'none', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', marginTop:'15px'}}>
                   Verificar Acceso
@@ -122,7 +152,7 @@ function App() {
       )
   }
 
-  // 4. VISTA DE REGISTRO (Solo se llega aquí si pasaron el Muro)
+  // 4. VISTA DE REGISTRO 
   if (view === 'register') {
     return (
       <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#003786'}}>
@@ -137,13 +167,11 @@ function App() {
                 <input type="email" placeholder="Email" value={regData.email} onChange={e=>setRegData({...regData, email:e.target.value})} style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} required/>
                 <input type="password" placeholder="Password" value={regData.password} onChange={e=>setRegData({...regData, password:e.target.value})} style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} required/>
                 
-                {/* Opcional: Aún puedes preguntar si esta cuenta será Admin o Empleado */}
                 <div style={{textAlign:'left', fontSize:'14px', background:'#f8fafc', padding:'10px', borderRadius:'6px'}}>
                   <label style={{cursor:'pointer', display:'flex', alignItems:'center', gap:'5px'}}>
                     <input type="checkbox" checked={regData.wantsAdmin} onChange={e=>setRegData({...regData, wantsAdmin:e.target.checked})}/> 
                     ¿Dar permisos de Administrador?
                   </label>
-                  {/* Reutilizamos el mismo código maestro para confirmar el rol de admin */}
                   {regData.wantsAdmin && (
                     <div style={{fontSize:'11px', color:'#64748b', marginTop:'5px', marginLeft:'20px'}}>
                         Se usará el código maestro para confirmar.
@@ -174,7 +202,7 @@ function App() {
       
       <div style={{position:'fixed', bottom:'20px', right:'20px', zIndex:1000}}>
         <button 
-          onClick={() => setView('verify_access')} // <--- AHORA MANDA A VERIFICACIÓN PRIMERO
+          onClick={() => setView('verify_access')} 
           style={{padding:'10px 20px', background:'white', color:'#0f172a', border:'1px solid #e2e8f0', borderRadius:'30px', boxShadow:'0 4px 10px rgba(0,0,0,0.1)', cursor:'pointer', fontWeight:'bold', fontSize:'13px'}}
         >
           ¿Crear nueva cuenta? Acceso Admin →
