@@ -13,11 +13,14 @@ function App() {
   // VISTAS: 'login', 'verify_access', 'register'
   const [view, setView] = useState('login') 
 
-  // Datos para Registro (¡Simplificado! Ya no pedimos adminCode aquí)
+  // Datos para Registro
   const [regData, setRegData] = useState({ email: '', password: '', nombre: '' })
   const [regLoading, setRegLoading] = useState(false)
+  
+  // NUEVO ESTADO: Ver/Ocultar contraseña en registro
+  const [showPassword, setShowPassword] = useState(false)
 
-  // ESTADO PARA EL CÓDIGO DE ACCESO (El muro de seguridad se mantiene)
+  // ESTADO PARA EL CÓDIGO DE ACCESO
   const [accessCode, setAccessCode] = useState('')
   const MASTER_KEY = 'Asesur2026' 
 
@@ -68,7 +71,7 @@ function App() {
     setLoading(false);
   }
 
-  // --- VERIFICAR ACCESO (El Muro) ---
+  // --- VERIFICAR ACCESO ---
   const handleVerifyAccess = (e) => {
     e.preventDefault()
     if (accessCode === MASTER_KEY) {
@@ -80,20 +83,18 @@ function App() {
     }
   }
 
-  // --- REGISTRO (Simplificado) ---
+  // --- REGISTRO ---
   const handleRegister = async (e) => {
     e.preventDefault(); 
     setRegLoading(true);
     
-    // ⚠️ IMPORTANTE: Aquí enviamos 'Empleado/a' para cumplir con tu base de datos
-    // Si tuvieras que crear un Admin, lo harías manualmente desde la base de datos de Supabase
+    // Rol por defecto
     const rol = 'Empleado/a';
     
     try { 
       await authService.register(regData.email, regData.password, regData.nombre, rol); 
       alert("✅ Cuenta creada. Inicia sesión."); 
       setView('login'); 
-      // Limpiamos el formulario
       setRegData({ email: '', password: '', nombre: '' });
     } catch (error) { 
       alert(error.message); 
@@ -152,7 +153,7 @@ function App() {
       )
   }
 
-  // 4. VISTA DE REGISTRO (¡Ahora mucho más limpia!)
+  // 4. VISTA DE REGISTRO
   if (view === 'register') {
     return (
       <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#003786'}}>
@@ -167,7 +168,7 @@ function App() {
                   placeholder="Nombre Completo" 
                   value={regData.nombre} 
                   onChange={e=>setRegData({...regData, nombre:e.target.value})} 
-                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} 
+                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box'}} 
                   required
                 />
                 <input 
@@ -175,23 +176,55 @@ function App() {
                   placeholder="Email" 
                   value={regData.email} 
                   onChange={e=>setRegData({...regData, email:e.target.value})} 
-                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} 
-                  required
-                />
-                <input 
-                  type="password" 
-                  placeholder="Password" 
-                  value={regData.password} 
-                  onChange={e=>setRegData({...regData, password:e.target.value})} 
-                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc'}} 
+                  style={{padding:'12px', borderRadius:'6px', border:'1px solid #ccc', width:'100%', boxSizing:'border-box'}} 
                   required
                 />
                 
-                {/* AQUÍ ELIMINAMOS EL CHECKBOX Y EL INPUT DE ADMIN CODE.
-                   Ahora es un formulario limpio y directo.
-                */}
+                {/* 👇 INPUT DE CONTRASEÑA CON ÍCONO 👇 */}
+                <div style={{position: 'relative', width: '100%'}}>
+                    <input 
+                      type={showPassword ? "text" : "password"} // Cambia dinámicamente
+                      placeholder="Password" 
+                      value={regData.password} 
+                      onChange={e=>setRegData({...regData, password:e.target.value})} 
+                      style={{
+                          padding:'12px', 
+                          paddingRight: '40px', // Espacio para el icono
+                          borderRadius:'6px', 
+                          border:'1px solid #ccc',
+                          width: '100%',
+                          boxSizing: 'border-box'
+                      }} 
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#334155', // COLOR OSCURO (Gris casi negro)
+                          display: 'flex',
+                          alignItems: 'center'
+                      }}
+                    >
+                      {showPassword ? (
+                        // OJO CERRADO (Ocultar) - Color Oscuro
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      ) : (
+                        // OJO ABIERTO (Ver) - Color Oscuro
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      )}
+                    </button>
+                </div>
+                {/* 👆 FIN DEL INPUT CON ÍCONO 👆 */}
 
-                <button disabled={regLoading} style={{padding:'12px', background:'#003786', color:'white', border:'none', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', marginTop:'10px'}}>
+                <button disabled={regLoading} style={{padding:'12px', background:'#003786', color:'white', border:'none', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', marginTop:'10px', width: '100%'}}>
                   {regLoading ? 'Creando...' : 'Registrarse'}
                 </button>
             </form>

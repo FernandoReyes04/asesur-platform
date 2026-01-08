@@ -106,8 +106,55 @@
 
 .recover-text {
   font-size: 13px;
-  color: #cbd5e1;
+  color: #ffffff;
   margin-bottom: 20px;
   text-align: left;
   line-height: 1.5;
+}
+
+/* Contenedor relativo para posicionar el icono dentro */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px; /* Mismo margen que los otros inputs */
+}
+
+/* Aseguramos que el input ocupe todo el ancho y tenga espacio para el icono */
+.password-wrapper .login-input {
+  width: 100%;
+  padding-right: 45px; /* Espacio a la derecha para que el texto no tape el icono */
+  box-sizing: border-box; /* Para que el padding no afecte el ancho total */
+  margin-bottom: 0; /* El margen lo maneja el wrapper */
+}
+
+/* El botón del icono */
+.toggle-password-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  color: #ffffff; /* <--- AQUÍ: Color Blanco */
+  opacity: 0.8;   /* Un poquito de transparencia para que se vea elegante */
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+.toggle-password-icon:hover {
+  opacity: 1; /* Al pasar el mouse se pone totalmente blanco brillante */
+}
+
+/* 👇 ESTO ES IMPORTANTE: Fuerza al dibujo del ojo a usar el color blanco */
+.toggle-password-icon svg {
+  stroke: currentColor !important; /* Ignora el color gris que tenía el código React */
+  width: 20px;
+  height: 20px;
 }
