@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
-import logoLargo from '../icons/LogoLargo.png'
+import logoLargo from '../icons/LogoLargo.PNG'
 import '../styles/Login.css' 
 
 export default function Login({ onLogin }) {

@@ -24,8 +24,8 @@ import panelIconRecibe from '../icons/recibo.png'
 import panelIconCircle from '../icons/circulo.png'
 
 // --- LOGOS ---
-import logoLargo from '../icons/LogoLargo.png' // <--- IMPORTANTE
-import logoCorto from '../icons/Logo.png'      // <--- IMPORTANTE
+import logoLargo from '../icons/LogoLargo.PNG' // <--- IMPORTANTE
+import logoCorto from '../icons/Logo.PNG'      // <--- IMPORTANTE
 
 // IMPORTAMOS LOS ESTILOS
 import '../styles/Dashboard.css'
