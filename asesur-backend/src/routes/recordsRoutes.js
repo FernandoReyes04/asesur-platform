@@ -1,7 +1,14 @@
-const express = require('express')
-const router = express.Router()
-const controller = require('../controllers/recordsController')
+const express = require('express');
+const router = express.Router();
+const recordsController = require('../controllers/recordsController');
 
-router.get('/search', controller.searchRecords)
+// 1. SEGURIDAD: Importamos el middleware de autenticación
+const authMiddleware = require('../middlewares/authMiddleware');
 
-module.exports = router
+// --- RUTAS ---
+
+// GET /api/records/search?q=Fernando
+// Protegido: Solo usuarios logueados pueden buscar expedientes de clientes
+router.get('/search', authMiddleware, recordsController.searchRecords);
+
+module.exports = router;

@@ -1,77 +1,46 @@
-const supabase = require('../config/supabase')
+const clientService = require('../services/clientService');
 
-// --- CREAR CLIENTE ---
-const createClient = async (req, res) => {
-  // 1. Recibimos TODOS los campos (incluyendo el nuevo 'telefono')
-  const { 
-    nombre, apellido, fecha_nacimiento, ine_url, agente_id, 
-    direccion, colonia, estado_direccion, municipio, rfc, tipo_persona,
-    telefono // <--- 1. NUEVO CAMPO
-  } = req.body
-
-  // --- VALIDACIÓN DE SEGURIDAD ---
-  // 1. Evitar datos vacíos (Validamos lo esencial)
-  if (!nombre || !apellido || !ine_url) {
-    return res.status(400).json({ error: 'Datos incompletos o maliciosos' })
+const getClients = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const clients = await clientService.getAllClients(q);
+    
+    // Respondemos siempre con estructura consistente
+    res.status(200).json(clients);
+  } catch (error) {
+    // Si falla, se lo pasamos al middleware de errores (errorHandler)
+    next(error);
   }
+};
 
-  // 2. Sanitización básica
-  // Si alguien intenta meter scripts HTML, los bloqueamos.
-  if (nombre.includes('<script>') || apellido.includes('<script>')) {
-      return res.status(400).json({ error: 'Carácteres no permitidos detectados 🛡️' })
+const createClient = async (req, res, next) => {
+  try {
+    const newClient = await clientService.createClient(req.body);
+    res.status(201).json({ success: true, data: newClient });
+  } catch (error) {
+    next(error);
   }
+};
 
-  // 3. Insertar en la BD
-  const { data, error } = await supabase
-    .from('clientes')
-    .insert([{ 
-      nombre, apellido, fecha_nacimiento, ine_url, agente_id, 
-      direccion, colonia, estado_direccion, municipio, rfc, tipo_persona,
-      telefono, // <--- 2. SE GUARDA AQUÍ
-      estado: 'pendiente' // Estado inicial del trámite
-    }])
+const searchClients = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const results = await clientService.getAllClients(q);
+    res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+};
 
-  if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Cliente registrado', data })
-}
+const updateClient = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    const updatedClient = await clientService.updateClient(id, updateData);
+    res.status(200).json({ success: true, data: updatedClient });
+  } catch (error) {
+    next(error);
+  }
+};
 
-// --- ACTUALIZAR CLIENTE ---
-const updateClient = async (req, res) => {
-  const { id } = req.params
-  // 1. Recibimos TODOS los campos para editar
-  const { 
-    nombre, apellido, fecha_nacimiento, ine_url, 
-    direccion, colonia, estado_direccion, municipio, rfc, tipo_persona,
-    telefono // <--- 3. RECIBIMOS EL TELÉFONO EDITADO
-  } = req.body
-
-  const { data, error } = await supabase
-    .from('clientes')
-    .update({ 
-      nombre, apellido, fecha_nacimiento, ine_url,
-      direccion, colonia, estado_direccion, municipio, rfc, tipo_persona,
-      telefono // <--- 4. ACTUALIZAMOS EL TELÉFONO
-    })
-    .eq('id', id)
-
-  if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Cliente actualizado', data })
-}
-
-// --- BUSCAR CLIENTES ---
-const searchClients = async (req, res) => {
-  const { q } = req.query
-  if (!q) return res.json([])
-  
-  const { data, error } = await supabase
-    .from('clientes')
-    .select('*')
-    // Busca por Nombre, Apellido O RFC
-    .or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,rfc.ilike.%${q}%`) 
-    .limit(10)
-
-  if (error) return res.status(500).json({ error: error.message })
-  res.json(data)
-}
-
-module.exports = { createClient, searchClients, updateClient }
+module.exports = { getClients, createClient, searchClients, updateClient };

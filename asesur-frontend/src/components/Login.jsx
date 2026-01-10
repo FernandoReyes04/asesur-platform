@@ -23,6 +23,14 @@ export default function Login({ onLogin }) {
       })
       if (error) throw error
       
+      // Guardamos en localStorage para que authFetch funcione
+      const sessionData = {
+        user: data.user,
+        session: data.session,
+        access_token: data.session.access_token
+      }
+      localStorage.setItem('user_session', JSON.stringify(sessionData))
+      
       const userData = {
         id: data.user.id,
         email: data.user.email,

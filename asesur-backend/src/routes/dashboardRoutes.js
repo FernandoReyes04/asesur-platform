@@ -1,7 +1,14 @@
-const express = require('express')
-const router = express.Router()
-const controller = require('../controllers/dashboardController')
+const express = require('express');
+const router = express.Router();
+const dashboardController = require('../controllers/dashboardController');
 
-router.get('/', controller.getDashboardData)
+// 1. SEGURIDAD: Importamos el middleware de autenticación
+const authMiddleware = require('../middlewares/authMiddleware');
 
-module.exports = router
+// --- RUTAS ---
+
+// GET /api/dashboard
+// Agregamos 'authMiddleware' para asegurar que solo usuarios logueados vean los datos
+router.get('/', authMiddleware, dashboardController.getDashboardData);
+
+module.exports = router;

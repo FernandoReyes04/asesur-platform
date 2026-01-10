@@ -1,3 +1,24 @@
+# Node modules
 node_modules
+
+# Variables de entorno
 .env
+.env.local
+.env.development
+.env.production
+
+# Sistema
 .DS_Store
+desktop.ini
+
+# Documentación de desarrollo
+CORRECCIONES.md
+TESTING.md
+DEBUG.md
+
+# Scripts de desarrollo
+*.sh
+
+# Logs
+*.log
+npm-debug.log*

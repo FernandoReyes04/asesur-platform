@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { authFetch } from '../utils/authHeaders'
 import '../styles/RecordsView.css'
 
 export default function RecordsView() {
@@ -11,26 +12,50 @@ export default function RecordsView() {
   const [isEditing, setIsEditing] = useState(false)
   const [editFormData, setEditFormData] = useState({})
 
-  useEffect(() => { handleSearch('') }, [])
+  // ✅ CORRECCIÓN 1: Usamos la URL dinámica (Localhost para pruebas, Nube para producción)
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
-  const handleSearch = async (term) => {
+  const handleSearch = useCallback(async (term) => {
     setSearchTerm(term)
     setLoading(true)
     try {
-      const response = await fetch(`https://asesur-platform.onrender.com/api/registros/search?q=${term}`)
+      // ✅ CORRECCIÓN 2: Apuntamos a '/clientes', no a '/records'
+      const endpoint = term 
+        ? `${API_URL}/clientes/search?q=${term}`
+        : `${API_URL}/clientes`;
+
+      const response = await authFetch(endpoint)
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.')
+        }
+        throw new Error(`Error del servidor: ${response.status}`)
+      }
+      
       const data = await response.json()
-      setResults(data)
+      // Protección: Aseguramos que sea un array
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setResults(list)
       setExpandedClientId(null) 
-    } catch (error) { console.error(error) } finally { setLoading(false) }
-  }
+
+    } catch (error) { 
+      console.error('Error en búsqueda:', error)
+      // Opcional: alert(error.message) 
+      setResults([])
+    } finally { 
+      setLoading(false) 
+    }
+  }, [API_URL])
+
+  useEffect(() => { handleSearch('') }, [handleSearch])
 
   const toggleExpand = (clientId) => {
       setExpandedClientId(expandedClientId === clientId ? null : clientId)
   }
 
-  // --- NUEVA FUNCIÓN: ELIMINAR PÓLIZA ---
+  // --- FUNCIÓN: ELIMINAR PÓLIZA ---
   const handleDeletePolicy = async (policyId) => {
-    // 1. Preguntamos confirmación para evitar accidentes
     const confirmDelete = window.confirm(
         "⚠️ ¿Estás seguro de que quieres ELIMINAR esta póliza?\n\nEsta acción la borrará permanentemente de la base de datos y NO se puede deshacer."
     );
@@ -39,8 +64,8 @@ export default function RecordsView() {
 
     try {
       setLoading(true);
-      // 2. Enviamos la orden de borrado al backend
-      const response = await fetch(`https://asesur-platform.onrender.com/api/polizas/${policyId}`, {
+      // ✅ CORRECCIÓN 3: Usamos API_URL dinámica
+      const response = await authFetch(`${API_URL}/polizas/${policyId}`, {
         method: 'DELETE',
       });
 
@@ -48,7 +73,7 @@ export default function RecordsView() {
 
       alert("🗑️ Póliza eliminada correctamente.");
       
-      // 3. Refrescamos la lista para que desaparezca visualmente
+      // Refrescamos la lista
       handleSearch(searchTerm);
 
     } catch (error) {
@@ -66,9 +91,9 @@ export default function RecordsView() {
 
   const handleSaveChanges = async () => {
     try {
-      const response = await fetch(`https://asesur-platform.onrender.com/api/polizas/${selectedRecord.poliza.id}`, {
+      // ✅ CORRECCIÓN 4: Usamos API_URL dinámica
+      const response = await authFetch(`${API_URL}/polizas/${selectedRecord.poliza.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editFormData)
       })
 
@@ -115,11 +140,13 @@ export default function RecordsView() {
       </div>
 
       {/* RESULTADOS (LISTA ACORDEÓN) */}
-      {loading ? <p>Cargando...</p> : results.length === 0 ? <p style={{textAlign:'center', color:'#64748b'}}>Sin resultados.</p> : (
+      {loading ? <p className="loading-text">Cargando...</p> : results.length === 0 ? <p style={{textAlign:'center', color:'#64748b', padding:'20px'}}>Sin resultados.</p> : (
         <div className="results-list">
           {results.map(cliente => {
             const isExpanded = expandedClientId === cliente.id
-            const hasPolicies = cliente.polizas.length > 0
+            // Protección por si polizas viene vacío
+            const polizas = cliente.polizas || [];
+            const hasPolicies = polizas.length > 0
             
             return (
                 <div key={cliente.id} className={`client-card ${isExpanded ? 'expanded' : ''}`}>
@@ -128,7 +155,7 @@ export default function RecordsView() {
                 <div onClick={() => toggleExpand(cliente.id)} className={`card-header ${isExpanded ? 'expanded' : ''}`}>
                     <div className="header-left">
                         <div className={`avatar-initial ${hasPolicies ? 'avatar-active' : 'avatar-inactive'}`}>
-                            {cliente.nombre.charAt(0).toUpperCase()}
+                            {cliente.nombre ? cliente.nombre.charAt(0).toUpperCase() : '?'}
                         </div>
                         <div className="client-info">
                             <h3>{cliente.nombre} {cliente.apellido}</h3>
@@ -138,7 +165,7 @@ export default function RecordsView() {
 
                     <div className="header-right">
                         <span className={`policy-count-badge ${hasPolicies ? 'badge-active' : 'badge-inactive'}`}>
-                            {cliente.polizas.length} Póliza(s)
+                            {polizas.length} Póliza(s)
                         </span>
                         <span className={`arrow-icon ${isExpanded ? 'rotated' : ''}`}>▶</span>
                     </div>
@@ -163,7 +190,7 @@ export default function RecordsView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {cliente.polizas.map(p => {
+                                {polizas.map(p => {
                                 const statusStyle = getStatusStyle(p.estado)
                                 return (
                                     <tr key={p.id}>
@@ -181,19 +208,18 @@ export default function RecordsView() {
                                         </span>
                                     </td>
                                     <td style={{ textAlign:'right' }}>
-                                        {/* CONTENEDOR DE BOTONES (VER + ELIMINAR) */}
+                                        {/* CONTENEDOR DE BOTONES */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
                                             <button onClick={(e) => { e.stopPropagation(); openModal(p, cliente); }} className="view-btn">
                                                 👁️ Ver Detalle
                                             </button>
                                             
-                                            {/* 👇 NUEVO BOTÓN DE ELIMINAR 👇 */}
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleDeletePolicy(p.id); }} 
                                                 style={{
                                                     background: 'none',
                                                     border: 'none',
-                                                    color: '#ef4444', // Rojo
+                                                    color: '#ef4444', 
                                                     fontSize: '11px',
                                                     cursor: 'pointer',
                                                     textDecoration: 'underline',
@@ -279,17 +305,11 @@ export default function RecordsView() {
                             href={selectedRecord.cliente.ine_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
+                            className="ine-link"
                             style={{
-                                display: 'inline-block',
-                                marginTop: '3px',
-                                fontSize: '12px',
-                                color: 'white',
-                                textDecoration: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                background: '#3b82f6',
-                                fontWeight: 'bold',
-                                boxShadow: '0 2px 5px rgba(59, 130, 246, 0.3)'
+                                display: 'inline-block', marginTop: '3px', fontSize: '12px',
+                                color: 'white', textDecoration: 'none', padding: '6px 12px',
+                                borderRadius: '6px', background: '#3b82f6', fontWeight: 'bold'
                             }}
                         >
                             Ver INE
@@ -313,23 +333,23 @@ export default function RecordsView() {
                   {/* FILA 1: Aseguradora y Tipo */}
                   <div className="edit-row">
                     <div style={{flex:1, marginRight:'10px'}}>
-                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Aseguradora</span>
+                        <span className="mini-label">Aseguradora</span>
                         {isEditing ? (
                             <select value={editFormData.aseguradora || 'Banorte'} onChange={e=>setEditFormData({...editFormData, aseguradora:e.target.value})} className="edit-input">
                                 <option>Banorte</option><option>Atlas</option><option>Qualitas</option><option>Inbursa</option><option>General de Seguros</option><option>Latino</option><option>El Aguila</option><option>Axxa</option>
                             </select>
                         ) : (
-                            <span style={{fontWeight:'bold', color:'#0284c7', fontSize:'14px'}}>{selectedRecord.poliza.aseguradora || '---'}</span>
+                            <span className="info-value-bold-blue">{selectedRecord.poliza.aseguradora || '---'}</span>
                         )}
                     </div>
                     <div style={{flex:1}}>
-                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Tipo de Póliza</span>
+                        <span className="mini-label">Tipo de Póliza</span>
                         {isEditing ? (
                             <select value={editFormData.tipo_poliza} onChange={e=>setEditFormData({...editFormData, tipo_poliza:e.target.value})} className="edit-input">
                                 <option>Seguro de Vida</option><option>Seguro de Auto</option><option>Seguro de Gastos Médicos Mayores</option><option>Seguro de Daños</option><option>Plan Personal de Retiro</option>
                             </select>
                         ) : (
-                            <span style={{fontWeight:'bold', color:'#334155', fontSize:'14px'}}>{selectedRecord.poliza.tipo_poliza || '---'}</span>
+                            <span className="info-value-bold">{selectedRecord.poliza.tipo_poliza || '---'}</span>
                         )}
                     </div>
                   </div>
@@ -337,17 +357,17 @@ export default function RecordsView() {
                   {/* FILA 2: Vendedor y Estado */}
                   <div className="status-row" style={{display:'flex', gap:'10px'}}>
                     <div style={{flex:1}}>
-                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Vendedor</span>
+                        <span className="mini-label">Vendedor</span>
                         {isEditing ? (
                             <select value={editFormData.vendedor} onChange={e=>setEditFormData({...editFormData, vendedor:e.target.value})} className="edit-input">
                                 <option>Oficina</option><option>Shirley</option><option>Yamile</option><option>Gerardo</option><option>Aaron</option><option>Don Luis</option>
                             </select>
                         ) : (
-                            <span style={{fontWeight:'bold', color:'#334155', fontSize:'14px'}}>{selectedRecord.poliza.vendedor || 'Oficina'}</span>
+                            <span className="info-value-bold">{selectedRecord.poliza.vendedor || 'Oficina'}</span>
                         )}
                     </div>
                     <div style={{flex:1}}>
-                        <span style={{fontSize:'11px', color:'#64748b', display:'block'}}>Estado</span>
+                        <span className="mini-label">Estado</span>
                         {isEditing ? (
                             <select value={editFormData.estado} onChange={e=>setEditFormData({...editFormData, estado:e.target.value})} className="edit-input">
                                 <option value="activa">ACTIVA</option><option value="cancelada">CANCELADA</option><option value="vencida">VENCIDA</option>

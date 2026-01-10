@@ -1,10 +1,10 @@
-// ✅ Apuntamos al servidor de Render en la nube
-const API_URL = 'https://asesur-platform.onrender.com/api' 
+// API URL dinámica
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
 export const authService = {
   
   async login(email, password) {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -19,8 +19,7 @@ export const authService = {
   },
 
   async register(email, password, nombre, rol) {
-    // Ahora sí enviará los datos a Render
-    const response = await fetch(`${API_URL}/register`, {
+    const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, nombre, rol })

@@ -1,0 +1,27 @@
+# Archivos de desarrollo y configuración local
+*.sh
+desktop.ini
+.DS_Store
+
+# Documentación de desarrollo (no necesaria en producción)
+DEBUG.md
+DESARROLLO.md
+CORRECCIONES.md
+TESTING.md
+
+# Variables de entorno (sensibles)
+.env
+.env.local
+.env.development
+.env.production
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build outputs
+dist/
+build/

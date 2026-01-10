@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { supabase } from '../supabaseClient' 
+import { supabase } from '../supabaseClient'
+import { authFetch } from '../utils/authHeaders'
 import GridSpinner from './GridSpinner'
 import '../styles/DashboardHome.css'
 
@@ -12,28 +13,24 @@ export default function DashboardHome({ userName }) {
   const [team, setTeam] = useState([])
   
   // --- ESTADOS PARA EL WIDGET DE CONFIGURACIÓN ---
-  const [configEmail, setConfigEmail] = useState('') // El correo actual
-  const [isEditingEmail, setIsEditingEmail] = useState(false) // ¿Está editando?
-  const [authInput, setAuthInput] = useState('') // Input de la contraseña
-  const [showAuth, setShowAuth] = useState(false) // ¿Mostrar input de contraseña?
-  const [tempEmail, setTempEmail] = useState('') // Input del nuevo correo
-  const MASTER_KEY = 'Asesur2026' // <--- CLAVE MAESTRA
+  const [configEmail, setConfigEmail] = useState('') 
+  const [isEditingEmail, setIsEditingEmail] = useState(false) 
+  const [authInput, setAuthInput] = useState('') 
+  const [showAuth, setShowAuth] = useState(false) 
+  const [tempEmail, setTempEmail] = useState('') 
+  const MASTER_KEY = 'Asesur2026' 
 
   const [exchangeRates, setExchangeRates] = useState({ 
       usd: { today: 0, yesterday: 0 }, 
       udi: { today: 0, yesterday: 0 } 
   })
 
-  // --- COLOR MAPPING ---
+  // ✅ 1. URL DINÁMICA: Detecta si es Local o Nube
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+
   const INSURER_COLORS = {
-    'Banorte': '#EB0029',            
-    'Qualitas': '#6A1B9A',           
-    'Axa': '#00008F',                
-    'HDI': '#009640',                
-    'Atlas': '#F37021',              
-    'Inbursa': '#004A8F',            
-    'General de Seguros': '#00AEEF', 
-    'Latino': '#89CFF0',             
+    'Banorte': '#EB0029', 'Qualitas': '#6A1B9A', 'Axa': '#00008F', 'HDI': '#009640',                
+    'Atlas': '#F37021', 'Inbursa': '#004A8F', 'General de Seguros': '#00AEEF', 'Latino': '#89CFF0',             
     'default': '#999999'             
   }
 
@@ -46,10 +43,10 @@ export default function DashboardHome({ userName }) {
         const currentMonthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
         const todayStr = today.toISOString().split('T')[0]
         
-        // 0. CARGAR CORREO DE CONFIGURACIÓN (Backend)
-        fetch('https://asesur-platform.onrender.com/api/config/email')
+        // ✅ USAMOS API_URL
+        authFetch(`${API_URL}/config`)
             .then(res => res.json())
-            .then(data => setConfigEmail(data.email || 'No configurado'))
+            .then(data => setConfigEmail(data.notification_email || 'No configurado'))
             .catch(err => console.error("Error cargando config:", err))
 
         // 1. FINANZAS
@@ -64,12 +61,13 @@ export default function DashboardHome({ userName }) {
                     udi: { today: udiBase.toFixed(4), yesterday: (udiBase - 0.0004).toFixed(4) }
                 }
             } catch {
-    console.error("Error al guardar");
-}
+                console.error("Error obteniendo divisas");
+                return { usd: {today:0, yesterday:0}, udi: {today:0, yesterday:0} }
+            }
         };
         const ratesData = await fetchFinancials();
 
-        // 2. COBRANZA
+        // 2. COBRANZA (Supabase directo está bien)
         const limitDate = new Date()
         limitDate.setDate(limitDate.getDate() + 15)
         const limitStr = limitDate.toISOString().split('T')[0]
@@ -83,15 +81,18 @@ export default function DashboardHome({ userName }) {
           .order('recibo_inicio', { ascending: true })
           .limit(5)
 
-        // 3. VENTAS
-        const resMetrics = await fetch('https://asesur-platform.onrender.com/api/metricas')
-        const metricsData = await resMetrics.json()
+        // 3. VENTAS (✅ USAMOS API_URL CON RUTA CORRECTA)
+        const resMetrics = await authFetch(`${API_URL}/metrics`) 
+        
         let chartData = []
-        if(metricsData && metricsData.insurerDetailed) {
-            chartData = metricsData.insurerDetailed.map(ins => ({
-                name: ins.name,
-                value: ins.history[currentMonthStr] || 0
-            })).filter(i => i.value > 0)
+        if(resMetrics.ok) {
+            const metricsData = await resMetrics.json()
+            if(metricsData && metricsData.insurerDetailed) {
+                chartData = metricsData.insurerDetailed.map(ins => ({
+                    name: ins.name,
+                    value: ins.history[currentMonthStr] || 0
+                })).filter(i => i.value > 0)
+            }
         }
 
         // 4. EQUIPO
@@ -110,7 +111,7 @@ export default function DashboardHome({ userName }) {
             return dayA - dayB
         }).slice(0, 5) 
 
-        setExchangeRates(ratesData)
+        setExchangeRates(ratesData || { usd: {today:0, yesterday:0}, udi: {today:0, yesterday:0} })
         setReminders(polizasVenc || [])
         setPieData(chartData || [])
         setTeam(profiles || [])
@@ -123,11 +124,10 @@ export default function DashboardHome({ userName }) {
       }
     }
     fetchData()
-  }, [])
+  }, [API_URL])
 
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : 'U'
 
-  // --- LÓGICA DEL WIDGET DE CORREO ---
   const handleUnlock = () => {
       if(authInput === MASTER_KEY) {
           setIsEditingEmail(true)
@@ -141,10 +141,10 @@ export default function DashboardHome({ userName }) {
 
   const handleSaveEmail = async () => {
       try {
-          const res = await fetch('https://asesur-platform.onrender.com/api/config/email', {
+          // ✅ USAMOS API_URL
+          const res = await authFetch(`${API_URL}/config`, {
               method: 'PUT',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ email: tempEmail })
+              body: JSON.stringify({ notification_email: tempEmail })
           })
           if(res.ok) {
               setConfigEmail(tempEmail)
@@ -167,7 +167,6 @@ export default function DashboardHome({ userName }) {
 
   return (
     <div className="dashboard-home-container">
-      
       <h2 className="welcome-title">
          ¡Hola de nuevo, <span className="highlight-name">{userName || 'Usuario'}</span>!
       </h2>
@@ -186,13 +185,13 @@ export default function DashboardHome({ userName }) {
                     <tbody>
                         <tr className="row-border">
                             <td className="td-label">USD</td>
-                            <td className="td-value-green">${exchangeRates.usd.today}</td>
-                            <td className="td-value-gray">${exchangeRates.usd.yesterday}</td>
+                            <td className="td-value-green">${exchangeRates?.usd?.today}</td>
+                            <td className="td-value-gray">${exchangeRates?.usd?.yesterday}</td>
                         </tr>
                         <tr>
                             <td className="td-label">UDI's</td>
-                            <td className="td-value-green">{exchangeRates.udi.today}</td>
-                            <td className="td-value-gray">{exchangeRates.udi.yesterday}</td>
+                            <td className="td-value-green">{exchangeRates?.udi?.today}</td>
+                            <td className="td-value-gray">{exchangeRates?.udi?.yesterday}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -200,7 +199,7 @@ export default function DashboardHome({ userName }) {
             <p className="card-footer-note">* Fuente: Open Exchange & Banxico (Oficial)</p>
         </div>
 
-        {/* 2. COBRANZA RÁPIDA */}
+        {/* 2. COBRANZA */}
         <div className="dashboard-card">
             <h3 className="card-title">Cobranza Urgente (15 días)</h3>
             {reminders.length === 0 ? (
@@ -227,7 +226,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 3. VENTAS DEL MES (COLORES ACTUALIZADOS) */}
+        {/* 3. VENTAS */}
         <div className="dashboard-card">
             <h3 className="card-title">Ventas del Mes Actual</h3>
             {pieData.length === 0 ? (
@@ -251,7 +250,7 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 4. EQUIPO DE TRABAJO */}
+        {/* 4. EQUIPO */}
         <div className="dashboard-card">
             <h3 className="card-title">Equipo de Trabajo</h3>
             {team.length === 0 ? (
@@ -296,14 +295,13 @@ export default function DashboardHome({ userName }) {
             )}
         </div>
 
-        {/* 6. WIDGET DE NOTIFICACIONES (NUEVO) */}
+        {/* 6. CONFIG */}
         <div className="dashboard-card" style={{borderLeft: '4px solid #F37021'}}>
             <h3 className="card-title">Notificaciones Automáticas</h3>
             <p style={{fontSize:'12px', color:'#64748b', marginBottom:'10px'}}>
                Reporte diario de renovaciones (09:00 AM).
             </p>
 
-            {/* VISTA NORMAL */}
             {!isEditingEmail && !showAuth && (
                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
                     <div style={{background:'#f1f5f9', padding:'10px', borderRadius:'6px', color:'#334155', fontWeight:'500', fontSize:'13px', wordBreak:'break-all'}}>
@@ -318,7 +316,6 @@ export default function DashboardHome({ userName }) {
                 </div>
             )}
 
-            {/* VISTA DE CONTRASEÑA */}
             {showAuth && !isEditingEmail && (
                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
                     <input 
@@ -335,7 +332,6 @@ export default function DashboardHome({ userName }) {
                 </div>
             )}
 
-            {/* VISTA DE EDICIÓN */}
             {isEditingEmail && (
                  <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
                     <input 

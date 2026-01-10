@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
+import { authFetch } from '../utils/authHeaders'
 import GridSpinner from './GridSpinner'
-import '../styles/NotificationsView.css' // <--- IMPORTAMOS CSS
+import '../styles/NotificationsView.css'
 
 export default function NotificationsView() {
   const [allReceipts, setAllReceipts] = useState([])
@@ -12,10 +13,13 @@ export default function NotificationsView() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('Todos')
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
   useEffect(() => {
-    fetch('https://asesur-platform.onrender.com/api/notificaciones')
+    authFetch(`${API_URL}/notifications/dashboard`)
       .then(res => res.json())
       .then(result => {
+        // Backend devuelve: { email: string, upcoming: [], overdue: [] }
         const overdue = (result.overdue || []).map(i => ({ ...i, status: 'Vencido' }))
         const upcoming = (result.upcoming || []).map(i => ({ ...i, status: 'Por Vencer' }))
         

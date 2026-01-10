@@ -24,17 +24,28 @@ function App() {
   const [accessCode, setAccessCode] = useState('')
   const MASTER_KEY = 'Asesur2026' 
 
-  // --- 1. EFECTO DE PERSISTENCIA BLINDADO ---
+  // --- 1. EFECTO DE PERSISTENCIA ---
   useEffect(() => {
-    let mounted = true; 
+    let mounted = true;
 
     const getSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error; 
+        
+        if (error) throw error;
 
+        if (session && mounted) {
+          // Guardamos en localStorage para authFetch
+          const sessionData = {
+            user: session.user,
+            session: session,
+            access_token: session.access_token
+          };
+          localStorage.setItem('user_session', JSON.stringify(sessionData));
+          setUser(session.user);
+        }
+        
         if (mounted) {
-          setUser(session?.user ?? null);
           setLoading(false);
         }
       } catch (error) {
@@ -50,7 +61,19 @@ function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
-        setUser(session?.user ?? null);
+        if (session) {
+          // Actualizar localStorage
+          const sessionData = {
+            user: session.user,
+            session: session,
+            access_token: session.access_token
+          };
+          localStorage.setItem('user_session', JSON.stringify(sessionData));
+          setUser(session.user);
+        } else {
+          localStorage.removeItem('user_session');
+          setUser(null);
+        }
         setLoading(false);
       }
     });
@@ -63,8 +86,19 @@ function App() {
 
   // --- LOGOUT ---
   const handleLogout = async () => {
-    setLoading(true); 
-    await supabase.auth.signOut();
+    setLoading(true);
+    
+    // Limpiar localStorage
+    localStorage.removeItem('user_session');
+    localStorage.removeItem('asesur_user_name');
+    
+    // Opcional: también limpiar Supabase si se usó
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error al cerrar sesión en Supabase:', error);
+    }
+    
     setUser(null);
     setView('login');
     setAccessCode('');
@@ -88,8 +122,8 @@ function App() {
     e.preventDefault(); 
     setRegLoading(true);
     
-    // Rol por defecto
-    const rol = 'Empleado/a';
+    // Rol por defecto (formato con mayúscula inicial)
+    const rol = 'Empleado';
     
     try { 
       await authService.register(regData.email, regData.password, regData.nombre, rol); 

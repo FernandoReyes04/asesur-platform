@@ -1,99 +1,98 @@
-const supabase = require('../config/supabase')
+const policyService = require('../services/policyService');
 
-// --- HELPER: AUTOMATIZACIÓN DE ESTADOS (Cobranza) ---
-const updatePolicyStatuses = async () => {
-  const today = new Date().toISOString().split('T')[0] 
+const getPolicies = async (req, res, next) => {
+  try {
+    const data = await policyService.getAllPolicies();
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
 
-  // 1. Marcar VENCIDO: Si ya pasamos la fecha FIN del recibo
-  const { error: errorVencido } = await supabase
-    .from('polizas')
-    .update({ estado: 'vencido' })
-    .lt('recibo_fin', today) 
-    .neq('estado', 'pagado')
-    .neq('estado', 'cancelada') 
+const getPoliciesByClient = async (req, res, next) => {
+  try {
+    const { cliente_id } = req.params;
+    if (!cliente_id) {
+        const err = new Error("ID de cliente requerido");
+        err.status = 400;
+        throw err;
+    }
+    const data = await policyService.getPoliciesByClientId(cliente_id);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
 
-  // 2. Marcar PENDIENTE: Si estamos dentro de la vigencia del recibo
-  const { error: errorPendiente } = await supabase
-    .from('polizas')
-    .update({ estado: 'pendiente' })
-    .gte('recibo_fin', today) 
-    .neq('estado', 'pagado')
-    .neq('estado', 'cancelada')
-    .neq('estado', 'vencido')
+const createPolicy = async (req, res, next) => {
+  try {
+    const { cliente_id, numero_poliza } = req.body;
 
-  if (errorVencido || errorPendiente) console.error("Error estados:", errorVencido || errorPendiente)
-}
+    // Validación básica de campos obligatorios
+    if (!cliente_id || !numero_poliza) {
+        const err = new Error("Faltan datos obligatorios (cliente_id, numero_poliza)");
+        err.status = 400;
+        throw err;
+    }
 
-// --- ENDPOINTS ---
+    const newPolicy = await policyService.createPolicy(req.body);
+    res.status(201).json({ message: 'Creado', data: newPolicy });
 
-const getPolicies = async (req, res) => {
-  await updatePolicyStatuses()
-  const { data, error } = await supabase
-    .from('polizas')
-    .select(`*, clientes ( nombre, apellido, telefono )`)
-    .order('recibo_fin', { ascending: true })
+  } catch (error) {
+    next(error);
+  }
+};
 
-  if (error) return res.status(400).json({ error: error.message })
-  res.json(data)
-}
+const updatePolicy = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updatedPolicy = await policyService.updatePolicy(id, req.body);
+    res.status(200).json({ message: 'Actualizado', data: updatedPolicy });
+  } catch (error) {
+    next(error);
+  }
+};
 
-const getPoliciesByClient = async (req, res) => {
-  const { cliente_id } = req.params
-  await updatePolicyStatuses()
-  const { data, error } = await supabase.from('polizas').select('*').eq('cliente_id', cliente_id)
-  if (error) return res.status(400).json({ error: error.message })
-  res.json(data)
-}
+// Acciones rápidas (Pagado / Cancelar)
+const markAsPaid = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await policyService.changeStatus(id, 'pagado');
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-const createPolicy = async (req, res) => {
-  const { 
-    cliente_id, numero_poliza, numero_recibo,
-    poliza_inicio, poliza_fin,      
-    recibo_inicio, recibo_fin,      
-    forma_pago, prima_neta, prima_total, aseguradora,
-    tipo_poliza, vendedor, 
-    estado 
-  } = req.body
+const cancelPolicy = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await policyService.changeStatus(id, 'cancelada');
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-  if (!cliente_id || !numero_poliza) return res.status(400).json({ error: 'Falta datos' })
-  
-  const { data, error } = await supabase
-    .from('polizas')
-    .insert([{ 
-        cliente_id, numero_poliza, aseguradora, 
-        poliza_inicio, poliza_fin, 
-        recibo_inicio, recibo_fin,
-        prima_total, prima_neta, forma_pago, numero_recibo,
-        tipo_poliza, vendedor,
-        estado: estado || 'pendiente' 
-    }])
-
-  if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Creado', data })
-}
-
-const updatePolicy = async (req, res) => {
-    const { id } = req.params
-    const { data, error } = await supabase.from('polizas').update(req.body).eq('id', id)
-    if (error) return res.status(400).json({ error: error.message })
-    res.json({ message: 'Actualizado', data })
-}
-
-const markAsPaid = async (req, res) => {
-  const { id } = req.params
-  const { data, error } = await supabase.from('polizas').update({ estado: 'pagado' }).eq('id', id)
-  if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Pagado' })
-}
-
-const cancelPolicy = async (req, res) => {
-  const { id } = req.params
-  const { data, error } = await supabase.from('polizas').update({ estado: 'cancelada' }).eq('id', id)
-  if (error) return res.status(400).json({ error: error.message })
-  res.json({ message: 'Póliza cancelada correctamente' })
-}
+const deletePolicy = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        await policyService.deletePolicy(id);
+        res.status(200).json({ 
+            success: true, 
+            message: "Póliza eliminada exitosamente" 
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 module.exports = { 
-    getPolicies, getPoliciesByClient, createPolicy, 
-    updatePolicy, markAsPaid, cancelPolicy 
-}
+    getPolicies, 
+    getPoliciesByClient, 
+    createPolicy, 
+    updatePolicy, 
+    markAsPaid, 
+    cancelPolicy,
+    deletePolicy
+};

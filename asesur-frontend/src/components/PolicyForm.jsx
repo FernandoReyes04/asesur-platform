@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { authFetch } from '../utils/authHeaders' // Asegúrate de importar solo lo que usas
 import '../styles/PolicyForm.css'
 
 export default function PolicyForm() {
@@ -8,7 +9,7 @@ export default function PolicyForm() {
   const [loading, setLoading] = useState(false)
 
   // URL DE PRODUCCIÓN
-  const API_URL = 'https://asesur-platform.onrender.com/api'
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
   const [policyData, setPolicyData] = useState({
     numero_poliza: '', 
@@ -43,19 +44,34 @@ export default function PolicyForm() {
       setPolicyData({ ...policyData, [field]: val }) 
   }
 
-  // --- API ---
+  // --- API (LÓGICA CORREGIDA AQUÍ) ---
   const handleSearch = async (term) => {
     setSearchTerm(term); 
-    if (term.length < 3) return
+    
+    // Si borran el texto o es muy corto, limpiamos la lista
+    if (term.length < 3) {
+        setClientsList([]);
+        return;
+    }
+
     try { 
-        // Usamos la constante API_URL para evitar errores de dedo
-        const res = await fetch(`${API_URL}/clientes/search?q=${term}`); 
-        const data = await res.json(); 
-        setClientsList(data) 
-    } catch (e) { console.error(e) }
+        // Usamos authFetch para que lleve el token
+        const res = await authFetch(`${API_URL}/clientes/search?q=${term}`); 
+        
+        if (res.ok) {
+            const data = await res.json(); 
+            setClientsList(data);
+        }
+    } catch (e) { 
+        console.error("Error buscando clientes:", e);
+    }
   }
 
-  const handleSelectClient = (c) => { setSelectedClient(c); setClientsList([]); setSearchTerm('') }
+  const handleSelectClient = (c) => { 
+      setSelectedClient(c); 
+      setClientsList([]); 
+      setSearchTerm(''); // Limpiamos el buscador al seleccionar
+  }
 
   // --- SUBMIT ---
   const handleSubmit = async (e) => {
@@ -70,7 +86,6 @@ export default function PolicyForm() {
       
       const payload = { 
           ...policyData, 
-          // Al ser campos de texto en la BD, pasarán con guiones o barras sin problema
           prima_neta: cleanPrimaNeta, 
           prima_total: cleanPrimaTotal, 
           cliente_id: selectedClient.id 
@@ -78,17 +93,14 @@ export default function PolicyForm() {
 
       console.log("Enviando datos:", payload); 
 
-      const res = await fetch(`${API_URL}/polizas`, {
+      const res = await authFetch(`${API_URL}/polizas`, {
         method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify(payload)
       })
       
-      // 👇 IMPORTANTE: Leemos la respuesta del servidor antes de lanzar error
       const responseData = await res.json();
 
       if (!res.ok) {
-          // Si falla, mostramos el mensaje exacto que dio la base de datos
           throw new Error(responseData.error || responseData.message || "Error desconocido al registrar")
       }
       
@@ -129,6 +141,8 @@ export default function PolicyForm() {
                     value={searchTerm} 
                     onChange={(e) => handleSearch(e.target.value)} 
                 />
+                
+                {/* Lista de resultados flotante o estática */}
                 <div className="clients-results">
                 {clientsList.map(c => (
                     <div key={c.id} onClick={() => handleSelectClient(c)} className="client-item">
@@ -136,6 +150,7 @@ export default function PolicyForm() {
                     </div>
                 ))}
                 </div>
+
                 {selectedClient && (
                     <div className="selected-client-info">
                         <div className="selected-name"> {selectedClient.nombre} {selectedClient.apellido}</div>
@@ -206,7 +221,6 @@ export default function PolicyForm() {
                     </div>
                     <div>
                         <label className="input-label">No. Póliza</label>
-                        {/* Acepta texto libre (guiones, letras, números) */}
                         <input 
                             className="form-input" 
                             type="text" 
@@ -222,7 +236,6 @@ export default function PolicyForm() {
                  <div className="form-row">
                     <div>
                         <label className="input-label">No. Recibo</label>
-                        {/* Acepta texto libre (barras, guiones) */}
                         <input 
                             className="form-input" 
                             type="text" 

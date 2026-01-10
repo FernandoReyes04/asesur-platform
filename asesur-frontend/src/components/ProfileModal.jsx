@@ -1,44 +1,40 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
-import '../styles/ProfileModal.css' // <--- IMPORT CSS
+import '../styles/ProfileModal.css'
 
 export default function ProfileModal({ user, isOpen, onClose, onUpdate }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [uploading, setUploading] = useState(false)
-  const [loading, setLoading] = useState(false) // Changed initial state to false to avoid flicker if closed
+  const [loading, setLoading] = useState(false)
 
-  // Load data when opening
+  // Cargar datos desde user_session en localStorage
   useEffect(() => {
-    // Moved getProfile INSIDE useEffect to fix dependency warning
-    const getProfile = async () => {
+    const loadProfile = () => {
+      if (!isOpen || !user) return
+      
+      setLoading(true)
       try {
-        setLoading(true)
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('nombre, email, avatar_url')
-          .eq('id', user.id)
-          .single()
-
-        if (error && error.code !== 'PGRST116') throw error
-
-        if (data) {
-          setName(data.nombre || '')
-          setEmail(data.email || user.email) 
-          setAvatarUrl(data.avatar_url)
+        const session = localStorage.getItem('user_session')
+        if (session) {
+          const userData = JSON.parse(session)
+          setName(userData.user?.user_metadata?.nombre || user.nombre || '')
+          setEmail(userData.user?.email || user.email || '')
+          setAvatarUrl(userData.user?.user_metadata?.avatar_url || null)
+        } else {
+          setName(user.nombre || '')
+          setEmail(user.email || '')
         }
       } catch (error) {
-        console.error('Error loading profile:', error.message)
+        console.error('Error loading profile:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    if (isOpen && user) {
-      getProfile()
-    }
-  }, [isOpen, user]) // Dependencies are correct now
+    loadProfile()
+  }, [isOpen, user])
 
   const uploadAvatar = async (event) => {
     try {
@@ -74,19 +70,31 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }) {
   const handleSave = async () => {
     try {
       setLoading(true)
-      const updates = {
-        id: user.id,
-        nombre: name,
-        avatar_url: avatarUrl,
-        updated_at: new Date(),
-      }
-
-      const { error } = await supabase.from('profiles').upsert(updates)
+      
+      // Actualizar metadatos del usuario en Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          nombre: name,
+          avatar_url: avatarUrl
+        }
+      })
 
       if (error) throw error
       
+      // Actualizar localStorage
+      const session = localStorage.getItem('user_session')
+      if (session) {
+        const userData = JSON.parse(session)
+        userData.user.user_metadata = {
+          ...userData.user.user_metadata,
+          nombre: name,
+          avatar_url: avatarUrl
+        }
+        localStorage.setItem('user_session', JSON.stringify(userData))
+      }
+      
       onUpdate({ nombre: name, avatar_url: avatarUrl })
-      alert('✅ Profile updated successfully')
+      alert('✅ Perfil actualizado correctamente')
       onClose()
 
     } catch (error) {

@@ -1,10 +1,13 @@
 import { useEffect, useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { supabase } from '../supabaseClient'
+import { authFetch } from '../utils/authHeaders'
 import GridSpinner from './GridSpinner'
 import '../styles/MetricsView.css'
 
 export default function MetricsView({ onViewHistory }) {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -29,7 +32,7 @@ export default function MetricsView({ onViewHistory }) {
 
   useEffect(() => {
     // 1. Carga Métricas
-    const fetchFinancials = fetch('https://asesur-platform.onrender.com/api/metricas')
+    const fetchFinancials = authFetch(`${API_URL}/metrics`)
       .then(res => {
         if (!res.ok) throw new Error('Error conectando al servidor')
         return res.json()       

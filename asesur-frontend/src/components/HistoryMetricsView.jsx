@@ -1,9 +1,12 @@
 import { useEffect, useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { authFetch } from '../utils/authHeaders'
 import GridSpinner from './GridSpinner'
 import '../styles/HistoryMetricsView.css'
 
 export default function HistoryMetricsView({ onBack }) {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
   
@@ -32,7 +35,7 @@ export default function HistoryMetricsView({ onBack }) {
   }
 
   useEffect(() => {
-    fetch('https://asesur-platform.onrender.com/api/metricas')
+    authFetch(`${API_URL}/metrics`)
       .then(res => res.json())
       .then(data => {
         setMetrics(data)

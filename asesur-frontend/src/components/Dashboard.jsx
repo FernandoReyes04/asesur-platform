@@ -46,29 +46,34 @@ export default function Dashboard({ user, onLogout }) {
     avatar_url: null
   })
 
-  // Cargar Perfil
+  // Cargar Perfil desde localStorage/metadatos del usuario
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user || !user.id) return
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('nombre, avatar_url')
-          .eq('id', user.id)
-          .single()
-
-        if (data) {
+    const loadProfile = () => {
+      if (!user) return
+      
+      // Obtener datos desde user_session en localStorage
+      const session = localStorage.getItem('user_session')
+      if (session) {
+        try {
+          const userData = JSON.parse(session)
+          const nombre = userData.user?.user_metadata?.nombre || 
+                        userData.nombre || 
+                        user.nombre || 
+                        'Usuario'
+          
           setProfileData({
-             nombre: data.nombre || 'Usuario',
-             avatar_url: data.avatar_url
+            nombre: nombre,
+            avatar_url: userData.user?.user_metadata?.avatar_url || null
           })
-          if (data.nombre) localStorage.setItem('asesur_user_name', data.nombre)
+          
+          localStorage.setItem('asesur_user_name', nombre)
+        } catch (error) {
+          console.error('Error parsing session:', error)
         }
-      } catch (error) {
-        console.error('Error fetching profile:', error)
       }
     }
-    fetchProfile()
+    
+    loadProfile()
   }, [user])
 
   const handleLogoutClick = () => {

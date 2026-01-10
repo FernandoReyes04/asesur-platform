@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { authFetch } from '../utils/authHeaders'
 import GridSpinner from './GridSpinner'
 import peligroIcon from '../icons/peligro.png';
 import calendar2Icon from '../icons/calendario(1).png';
@@ -6,6 +7,8 @@ import canceledIcon from '../icons/cancelado.png';
 import '../styles/RenewalsView.css'
 
 export default function RenewalsView() {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
   const [allRenewals, setAllRenewals] = useState([])
   const [filteredRenewals, setFilteredRenewals] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,13 +22,14 @@ export default function RenewalsView() {
   const [filterStatus, setFilterStatus] = useState('Todos')
 
   useEffect(() => {
-    fetch('https://asesur-platform.onrender.com/api/polizas/renovaciones') // Asegúrate que la ruta en tu router coincida
+    // Backend devuelve: { upcoming: [], expired: [], cancelled: [] }
+    authFetch(`${API_URL}/notifications/renewals`)
       .then(res => res.json())
       .then(result => {
         // Mapeamos los estados basados en lo que envía el backend
         const upcoming = (result.upcoming || []).map(i => ({ ...i, status: 'Por Renovar' }))
         const expired = (result.expired || []).map(i => ({ ...i, status: 'Vencida' }))
-        const cancelled = (result.cancelled || []).map(i => ({ ...i, status: 'Cancelada' })) // <--- NUEVO GRUPO
+        const cancelled = (result.cancelled || []).map(i => ({ ...i, status: 'Cancelada' }))
         
         // Unimos todo
         const combined = [...expired, ...upcoming, ...cancelled].sort((a,b) => new Date(a.poliza_fin) - new Date(b.poliza_fin))

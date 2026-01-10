@@ -1,40 +1,41 @@
-const supabase = require('../config/supabase')
+const authService = require('../services/authService');
 
-const login = async (req, res) => {
-  const { email, password } = req.body
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  
-  if (error) return res.status(401).json({ error: error.message })
-  
-  const { data: perfil } = await supabase
-    .from('profiles')
-    .select('rol, nombre')
-    .eq('id', data.user.id)
-    .single()
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-  res.json({ 
-    user: data.user, 
-    session: data.session,
-    rol: perfil?.rol || 'empleado',
-    nombre: perfil?.nombre
-  })
-}
+    // Validación básica
+    if (!email || !password) {
+        const error = new Error("Email y contraseña obligatorios");
+        error.status = 400;
+        throw error;
+    }
 
-const register = async (req, res) => {
-  const { email, password, nombre, rol } = req.body
-  
-  const { data, error } = await supabase.auth.signUp({ email, password })
-  if (error) return res.status(400).json({ error: error.message })
+    const result = await authService.loginUser(email, password);
+    res.status(200).json(result);
 
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([{ id: data.user.id, email, nombre, rol }])
-    
-    if (profileError) return res.status(400).json({ error: profileError.message })
+  } catch (error) {
+    next(error); // Se va al middleware global de errores
   }
+};
 
-  res.json({ message: 'Usuario registrado', user: data.user })
-}
+const register = async (req, res, next) => {
+  try {
+    const { email, password, nombre, rol } = req.body;
 
-module.exports = { login, register }
+    // Validación básica
+    if (!email || !password || !nombre) {
+        const error = new Error("Faltan datos (email, password, nombre)");
+        error.status = 400;
+        throw error;
+    }
+
+    const result = await authService.registerUser(email, password, nombre, rol);
+    res.status(201).json(result);
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { login, register };

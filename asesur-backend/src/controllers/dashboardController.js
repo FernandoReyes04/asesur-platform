@@ -1,23 +1,15 @@
-const supabase = require('../config/supabase')
+const dashboardService = require('../services/dashboardService');
 
-const getDashboardData = async (req, res) => {
-  const today = new Date().toISOString().split('T')[0]
-
+const getDashboardData = async (req, res, next) => {
   try {
-    const [clientesHoy, recientes, agentes] = await Promise.all([
-      supabase.from('clientes').select('*').eq('fecha_limite', today),
-      supabase.from('clientes').select('*').order('created_at', { ascending: false }).limit(5),
-      supabase.from('profiles').select('*').eq('rol', 'empleado')
-    ])
-
-    res.json({
-      clientesHoy: clientesHoy.data || [],
-      ultimosTramites: recientes.data || [],
-      agentes: agentes.data || []
-    })
+    // El servicio se encarga de la magia y de los errores de DB
+    const data = await dashboardService.getSummaryData();
+    
+    res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    // Si algo falla en el servicio, lo pasamos al middleware global
+    next(error);
   }
-}
+};
 
-module.exports = { getDashboardData }
+module.exports = { getDashboardData };

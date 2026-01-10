@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { authFetch, getAuthHeaders } from '../utils/authHeaders'
 import '../styles/ClientManagement.css' 
 
 export default function ClientManagement({ user }) {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
   const [searchTerm, setSearchTerm] = useState('')
   const [clientsList, setClientsList] = useState([])
   const [loading, setLoading] = useState(false)
@@ -33,7 +36,7 @@ export default function ClientManagement({ user }) {
   const fetchClients = async (term) => {
     try {
       const query = term || 'a'
-      const response = await fetch(`https://asesur-platform.onrender.com/api/clientes/search?q=${query}`)
+      const response = await authFetch(`${API_URL}/clientes/search?q=${query}`)
       const data = await response.json()
       setClientsList(data)
     } catch (error) { console.error(error) }
@@ -113,12 +116,11 @@ export default function ClientManagement({ user }) {
       const payload = { ...formData, ine_url: publicUrl, agente_id: user.id || user.user?.id }
       delete payload.archivo; delete payload.ine_url_existente;
 
-      const url = selectedClient ? `https://asesur-platform.onrender.com/api/clientes/${selectedClient.id}` : 'https://asesur-platform.onrender.com/api/clientes'
+      const url = selectedClient ? `${API_URL}/clientes/${selectedClient.id}` : `${API_URL}/clientes`
       const method = selectedClient ? 'PUT' : 'POST'
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
 

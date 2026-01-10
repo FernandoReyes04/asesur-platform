@@ -1,44 +1,28 @@
-const supabase = require('../config/supabase')
-const { initScheduler, sendVerificationEmail } = require('../services/emailScheduler');
+// src/controllers/configController.js
+const configService = require('../services/configService');
 
-// GET: Obtener configuración
-const getConfig = async (req, res) => {
-    const { data, error } = await supabase
-        .from('configuracion')
-        .select('clave, valor')
-        .in('clave', ['email_notificaciones', 'hora_notificaciones'])
+const getConfig = async (req, res, next) => {
+  try {
+    // Conectamos con TU método: getNotificationSettings
+    const config = await configService.getNotificationSettings();
+    res.status(200).json(config);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateConfig = async (req, res, next) => {
+  try {
+    // req.body trae { email, time } (validado por Joi)
+    const { email, time } = req.body;
     
-    if(error) return res.status(400).json({error: error.message})
-
-    const config = {};
-    data.forEach(item => {
-        if(item.clave === 'email_notificaciones') config.email = item.valor;
-        if(item.clave === 'hora_notificaciones') config.time = item.valor;
-    });
-
-    res.json(config)
-}
-
-// PUT: Actualizar configuración
-const updateConfig = async (req, res) => {
-    const { email, time } = req.body
+    // Conectamos con TU método: updateNotificationSettings
+    const result = await configService.updateNotificationSettings(email, time);
     
-    if(!email || !time) return res.status(400).json({error: "Faltan datos"})
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    try {
-        await supabase.from('configuracion').upsert([
-            { clave: 'email_notificaciones', valor: email },
-            { clave: 'hora_notificaciones', valor: time }
-        ]);
-
-        await initScheduler(); 
-        await sendVerificationEmail(email, time);
-
-        res.json({ message: "Configuración actualizada" })
-    } catch (error) {
-        res.status(500).json({ error: error.message })
-    }
-}
-
-// EXPORTAR CON LOS NOMBRES NUEVOS
-module.exports = { getConfig, updateConfig }
+module.exports = { getConfig, updateConfig };

@@ -1,7 +1,7 @@
 // UBICACIÓN: asesur-backend/src/services/emailScheduler.js
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
-const supabase = require('../config/supabase');
+const { supabase } = require('../config/supabase');
 
 let currentTask = null; // Variable para controlar la tarea cron activa
 

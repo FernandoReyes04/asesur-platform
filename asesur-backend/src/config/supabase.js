@@ -1,14 +1,14 @@
-require('dotenv').config() // Asegúrate de tener dotenv instalado
-const { createClient } = require('@supabase/supabase-js')
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 
 // Usamos process.env para leer del archivo .env oculto
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_KEY
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('⚠️ Faltan las variables de entorno de Supabase')
+  throw new Error('⚠️ Faltan las variables de entorno de Supabase');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-module.exports = supabase
+module.exports = { supabase };
